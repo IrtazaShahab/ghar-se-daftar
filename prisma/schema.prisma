@@ -1,0 +1,362 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  CUSTOMER
+  CORPORATE_ADMIN
+  HOME_CHEF
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+  PENDING_VERIFICATION
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum OrderStatus {
+  DRAFT
+  CONFIRMED
+  PREPARING
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum PlanType {
+  SINGLE
+  WEEKLY
+  MONTHLY
+  CORPORATE
+}
+
+model User {
+  id            String         @id @default(cuid())
+  email         String?        @unique
+  phone         String?        @unique
+  fullName      String
+  passwordHash  String?
+  role          UserRole       @default(CUSTOMER)
+  status        UserStatus     @default(ACTIVE)
+  emailVerified DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  profile       Profile?
+  addresses     Address[]
+  subscriptions Subscription[]
+  orders        Order[]
+  auditLogs     AuditLog[]     @relation("AuditActor")
+
+  @@index([role])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Profile {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  whatsappNumber       String?
+  companyName          String?
+  deliveryArea         String?
+  officeAddress        String?
+  deliveryInstructions String?
+  dietaryNotes         String?
+  spiceLevel           String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String?
+  companyId String?
+  label     String
+  city      String
+  area      String
+  address   String
+  latitude  Float?
+  longitude Float?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([city, area])
+  @@index([userId])
+  @@index([companyId])
+}
+
+model Company {
+  id          String              @id @default(cuid())
+  name        String
+  contactName String
+  contactPhone String
+  billingEmail String?
+  employeeCount Int?
+  isActive    Boolean             @default(true)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  employees   CompanyEmployee[]
+  addresses   Address[]
+  orders      Order[]
+  invoices    Invoice[]
+
+  @@index([name])
+}
+
+model CompanyEmployee {
+  id        String   @id @default(cuid())
+  companyId String
+  fullName  String
+  phone     String?
+  email     String?
+  isActive  Boolean  @default(true)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([companyId])
+}
+
+model HomeChef {
+  id          String    @id @default(cuid())
+  userId      String?   @unique
+  displayName String
+  area        String
+  city        String
+  specialty   String
+  verified    Boolean   @default(false)
+  rating      Float     @default(0)
+  kitchens    Kitchen[]
+  orders      Order[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([city, area])
+  @@index([verified])
+}
+
+model Kitchen {
+  id             String   @id @default(cuid())
+  homeChefId     String
+  hygieneScore   Int?
+  verificationNotes String?
+  isApproved     Boolean  @default(false)
+  homeChef       HomeChef @relation(fields: [homeChefId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@index([homeChefId])
+}
+
+model MenuWeek {
+  id        String    @id @default(cuid())
+  startsOn  DateTime
+  endsOn    DateTime
+  title     String
+  isActive  Boolean   @default(false)
+  days      MenuDay[]
+  createdAt DateTime  @default(now())
+
+  @@index([startsOn, endsOn])
+  @@index([isActive])
+}
+
+model MenuDay {
+  id        String       @id @default(cuid())
+  menuWeekId String
+  dayName   String
+  date      DateTime?
+  isAddon   Boolean      @default(false)
+  menuWeek  MenuWeek     @relation(fields: [menuWeekId], references: [id], onDelete: Cascade)
+  options   MenuOption[]
+
+  @@index([menuWeekId])
+  @@index([date])
+}
+
+model MenuOption {
+  id          String      @id @default(cuid())
+  menuDayId   String
+  name        String
+  description String?
+  items       String
+  price       Int         @default(350)
+  isAvailable Boolean     @default(true)
+  menuDay     MenuDay     @relation(fields: [menuDayId], references: [id], onDelete: Cascade)
+  orderItems  OrderItem[]
+  subscriptionItems SubscriptionItem[]
+
+  @@index([menuDayId])
+  @@index([isAvailable])
+}
+
+model Subscription {
+  id          String             @id @default(cuid())
+  userId      String?
+  companyId   String?
+  planType    PlanType
+  status      SubscriptionStatus @default(ACTIVE)
+  startsOn    DateTime
+  endsOn      DateTime?
+  price       Int
+  user        User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items       SubscriptionItem[]
+  payments    Payment[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([status])
+}
+
+model SubscriptionItem {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  menuOptionId   String
+  serviceDate    DateTime
+  quantity       Int          @default(1)
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  menuOption     MenuOption   @relation(fields: [menuOptionId], references: [id])
+
+  @@index([subscriptionId])
+  @@index([serviceDate])
+}
+
+model Order {
+  id          String      @id @default(cuid())
+  userId      String?
+  companyId   String?
+  homeChefId   String?
+  status      OrderStatus @default(DRAFT)
+  deliveryDate DateTime
+  totalAmount Int
+  user        User?       @relation(fields: [userId], references: [id])
+  company     Company?    @relation(fields: [companyId], references: [id])
+  homeChef    HomeChef?   @relation(fields: [homeChefId], references: [id])
+  items       OrderItem[]
+  payment     Payment?
+  delivery    Delivery?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([userId])
+  @@index([companyId])
+  @@index([homeChefId])
+  @@index([deliveryDate, status])
+}
+
+model OrderItem {
+  id          String     @id @default(cuid())
+  orderId     String
+  menuOptionId String
+  quantity    Int        @default(1)
+  unitPrice   Int
+  order       Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuOption  MenuOption @relation(fields: [menuOptionId], references: [id])
+
+  @@index([orderId])
+  @@index([menuOptionId])
+}
+
+model Payment {
+  id             String        @id @default(cuid())
+  orderId         String?       @unique
+  subscriptionId  String?
+  provider        String
+  providerRef     String?       @unique
+  amount          Int
+  status          PaymentStatus @default(PENDING)
+  order           Order?        @relation(fields: [orderId], references: [id])
+  subscription    Subscription? @relation(fields: [subscriptionId], references: [id])
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([subscriptionId])
+  @@index([status])
+}
+
+model Invoice {
+  id        String   @id @default(cuid())
+  companyId String
+  month     Int
+  year      Int
+  amount    Int
+  status    PaymentStatus @default(PENDING)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([companyId, month, year])
+}
+
+model DeliveryZone {
+  id        String   @id @default(cuid())
+  city      String
+  area      String
+  isActive  Boolean  @default(true)
+  cutoffTime String  @default("10:30")
+  createdAt DateTime @default(now())
+
+  @@unique([city, area])
+}
+
+model Delivery {
+  id        String   @id @default(cuid())
+  orderId   String   @unique
+  riderName String?
+  riderPhone String?
+  pickupAt  DateTime?
+  deliveredAt DateTime?
+  notes     String?
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model Complaint {
+  id        String   @id @default(cuid())
+  userId    String?
+  orderId   String?
+  message   String
+  status    String   @default("OPEN")
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([orderId])
+  @@index([status])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation("AuditActor", fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}

@@ -1,0 +1,112 @@
+import type { Metadata } from "next";
+import { Inter, Playfair_Display } from "next/font/google";
+import "./globals.css";
+import { RootProviders } from "@/components/providers/root-providers";
+import { getOrganizationSchema } from "@/lib/seo";
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  display: "swap"
+});
+
+const playfair = Playfair_Display({
+  variable: "--font-playfair",
+  subsets: ["latin"],
+  display: "swap"
+});
+
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(appUrl),
+  title: {
+    default: "Ghar Se Daftar — Homemade Office Lunch Subscription",
+    template: "%s | Ghar Se Daftar"
+  },
+  description:
+    "Premium homemade Pakistani lunch subscriptions for office professionals and corporate teams. Fresh daily cooked meals delivered to your office. Ghar Ka Khana, Ab Daftar Tak.",
+  keywords: [
+    "office lunch",
+    "meal subscription",
+    "Pakistani food",
+    "homemade meals",
+    "lunch delivery",
+    "Lahore",
+    "corporate lunch"
+  ],
+  authors: [{ name: "Ghar Se Daftar" }],
+  creator: "Ghar Se Daftar",
+  publisher: "Ghar Se Daftar",
+  formatDetection: {
+    email: false,
+    telephone: false,
+    address: false
+  },
+  openGraph: {
+    title: "Ghar Se Daftar — Ghar Ka Khana, Ab Daftar Tak",
+    description: "Premium homemade Pakistani office lunch subscriptions. Fresh meals delivered daily.",
+    url: appUrl,
+    type: "website",
+    locale: "en_PK",
+    siteName: "Ghar Se Daftar",
+    images: [
+      {
+        url: `${appUrl}/og-image.png`,
+        width: 1200,
+        height: 630,
+        alt: "Ghar Se Daftar"
+      }
+    ]
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Ghar Se Daftar",
+    description: "Premium homemade Pakistani office lunch subscriptions",
+    creator: "@gharsequdaftar",
+    images: [`${appUrl}/twitter-image.png`]
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1
+    }
+  },
+  alternates: {
+    canonical: appUrl,
+    languages: {
+      "en-PK": appUrl,
+      "ur-PK": `${appUrl}/ur`
+    }
+  }
+};
+
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="en" data-scroll-behavior="smooth">
+      <head>
+        {/* JSON-LD Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify(getOrganizationSchema())
+          }}
+        />
+        {/* Preconnect to Google Fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      </head>
+      <body className={`${inter.variable} ${playfair.variable} font-sans antialiased`}>
+        <RootProviders>
+          {children}
+        </RootProviders>
+      </body>
+    </html>
+  );
+}

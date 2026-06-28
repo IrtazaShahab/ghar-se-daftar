@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f8f4ec;
+  --foreground: #1f241f;
+  --primary: #355e3b;
+  --secondary: #8b5a2b;
+  --accent: #d4a373;
+  --muted: #6f756c;
+  --border: #e7ddcf;
+  --card: #fffaf2;
+  --danger: #b94a48;
+  --success: #3f7d4a;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-card: var(--card);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  /* Smooth scroll handled by Lenis provider - do not use CSS scroll-behavior */
+}
+
+body {
+  background:
+    radial-gradient(circle at top left, rgba(212, 163, 115, 0.24), transparent 32rem),
+    linear-gradient(180deg, #f8f4ec 0%, #fffaf2 48%, #f8f4ec 100%);
+  color: var(--foreground);
+  min-height: 100vh;
+}
+
+::selection {
+  background: rgba(53, 94, 59, 0.18);
+}
+
+.container-gsd {
+  width: min(1180px, calc(100% - 32px));
+  margin-inline: auto;
+}
+
+.glass-card {
+  border: 1px solid rgba(231, 221, 207, 0.88);
+  background: rgba(255, 250, 242, 0.82);
+  box-shadow: 0 24px 70px rgba(53, 47, 34, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+.focus-ring {
+  outline: none;
+}
+
+.focus-ring:focus-visible {
+  box-shadow: 0 0 0 4px rgba(53, 94, 59, 0.18);
+}
