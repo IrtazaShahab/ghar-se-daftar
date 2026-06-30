@@ -1,19 +1,19 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, memo } from "react";
 import { FoodCard } from "@/components/ui/food-card";
 import { weeklyMenu } from "@/data/menu";
 import { useCart } from "@/store/cart";
 import { useCartDrawer } from "@/components/providers/root-providers";
 import { Badge } from "@/components/ui/badge";
 
-export function MenuDayTabs() {
+function MenuDayTabsComponent() {
   const [selectedDay, setSelectedDay] = useState(0);
   const { dispatch } = useCart();
   const { openCart } = useCartDrawer();
   const day = weeklyMenu[selectedDay];
 
-  const handleAddToCart = (optionIndex: number) => {
+  const handleAddToCart = useCallback((optionIndex: number) => {
     const option = optionIndex === 0 ? day.optionA : day.optionB;
     dispatch({
       type: "ADD_ITEM",
@@ -28,8 +28,8 @@ export function MenuDayTabs() {
       },
     });
     // Open cart drawer after adding item
-    setTimeout(() => openCart(), 100);
-  };
+    openCart();
+  }, [day, dispatch, openCart]);
 
   return (
     <div className="w-full">
@@ -80,3 +80,5 @@ export function MenuDayTabs() {
     </div>
   );
 }
+
+export const MenuDayTabs = memo(MenuDayTabsComponent);

@@ -2,6 +2,7 @@ import { Badge } from "./badge";
 import { Button } from "./button";
 import { formatCurrencyPKR } from "@/lib/utils";
 import { FoodImage } from "./food-image";
+import { memo } from "react";
 
 export interface FoodCardProps {
   name: string;
@@ -13,7 +14,7 @@ export interface FoodCardProps {
   selectLabel?: string;
 }
 
-export function FoodCard({
+function FoodCardComponent({
   name,
   items,
   tags,
@@ -62,3 +63,5 @@ export function FoodCard({
     </div>
   );
 }
+
+export const FoodCard = memo(FoodCardComponent);

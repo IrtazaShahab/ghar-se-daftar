@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
+import { memo } from "react";
 
-export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+function CardComponent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       className={cn(
@@ -12,7 +13,7 @@ export function Card({ className, ...props }: React.HTMLAttributes<HTMLDivElemen
   );
 }
 
-export function SectionLabel({ children }: { children: React.ReactNode }) {
+function SectionLabelComponent({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-4 inline-flex rounded-full border border-border bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-secondary">
       {children}
@@ -20,7 +21,7 @@ export function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function SectionHeader({ eyebrow, title, description }: { eyebrow?: string; title: string; description?: string }) {
+function SectionHeaderComponent({ eyebrow, title, description }: { eyebrow?: string; title: string; description?: string }) {
   return (
     <div className="mx-auto mb-12 max-w-3xl text-center">
       {eyebrow ? <SectionLabel>{eyebrow}</SectionLabel> : null}
@@ -31,3 +32,7 @@ export function SectionHeader({ eyebrow, title, description }: { eyebrow?: strin
     </div>
   );
 }
+
+export const Card = memo(CardComponent);
+export const SectionLabel = memo(SectionLabelComponent);
+export const SectionHeader = memo(SectionHeaderComponent);

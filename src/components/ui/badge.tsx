@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
+import { memo } from "react";
 
-export function Badge({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
+function BadgeComponent({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) {
   return (
     <span
       className={cn(
@@ -11,3 +12,5 @@ export function Badge({ className, ...props }: React.HTMLAttributes<HTMLSpanElem
     />
   );
 }
+
+export const Badge = memo(BadgeComponent);

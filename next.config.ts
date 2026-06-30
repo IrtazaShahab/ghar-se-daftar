@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const securityHeaders = [
   { key: "X-DNS-Prefetch-Control", value: "on" },
@@ -12,21 +13,33 @@ const securityHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  compress: true,
+  turbopack: {
+    root: path.resolve(__dirname)
+  },
   images: {
     remotePatterns: [
       { protocol: "https", hostname: "images.unsplash.com" },
       { protocol: "https", hostname: "*.supabase.co" }
-    ]
+    ],
+    minimumCacheTTL: 60 * 60 * 24 * 365,
+    formats: ["image/webp", "image/avif"]
   },
   async headers() {
     return [
       {
         source: "/(.*)",
         headers: securityHeaders
+      },
+      {
+        source: "/images/(.*)",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" }
+        ]
       }
     ];
   },
-  // Skip prerendering for dynamic routes that use useSearchParams
   staticPageGenerationTimeout: 120,
   typescript: {
     tsconfigPath: "./tsconfig.json"

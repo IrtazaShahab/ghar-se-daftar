@@ -7,7 +7,6 @@ import { X, Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
 import { formatCurrencyPKR } from "@/lib/utils";
 import { FoodImage } from "@/components/ui/food-image";
 import Link from "next/link";
-import { motion, AnimatePresence } from "framer-motion";
 import { useState } from "react";
 
 export interface CartDrawerProps {
@@ -57,25 +56,22 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const isEmpty = state.items.length === 0;
 
   return (
-    <AnimatePresence>
+    <>
       {isOpen && (
         <>
           {/* Backdrop */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+          <div
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/30 lg:hidden"
+            className={`fixed inset-0 z-40 bg-black/30 lg:hidden transition-opacity duration-200 ${
+              isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+            }`}
           />
 
           {/* Drawer Container */}
-          <motion.div
-            initial={{ x: "100%" }}
-            animate={{ x: 0 }}
-            exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 20 }}
-            className="fixed right-0 top-0 z-50 h-screen w-full overflow-y-auto bg-background md:max-w-md lg:fixed lg:right-4 lg:top-20 lg:h-auto lg:w-96 lg:rounded-[28px] lg:border lg:border-border lg:shadow-xl"
+          <div
+            className={`fixed right-0 top-0 z-50 h-screen w-full overflow-y-auto bg-background md:max-w-md lg:fixed lg:right-4 lg:top-20 lg:h-auto lg:w-96 lg:rounded-[28px] lg:border lg:border-border lg:shadow-xl transition-transform duration-300 transform ${
+              isOpen ? "translate-x-0" : "translate-x-full"
+            }`}
           >
             {/* Header */}
             <div className="sticky top-0 flex items-center justify-between border-b border-border bg-background/95 p-6 backdrop-blur-sm">
@@ -229,9 +225,9 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                 </>
               )}
             </div>
-          </motion.div>
+          </div>
         </>
       )}
-    </AnimatePresence>
+    </>
   );
 }
