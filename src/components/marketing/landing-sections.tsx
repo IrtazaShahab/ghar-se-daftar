@@ -3,8 +3,10 @@ import { Badge } from "@/components/ui/badge";
 import { ButtonLink } from "@/components/ui/button";
 import { formatCurrencyPKR, whatsappUrl, cn } from "@/lib/utils";
 import { plans, weeklyMenu } from "@/data/menu";
+import { foodImages } from "@/data/food-images";
 import { Building2, CheckCircle2, ChefHat, HeartHandshake, MessageCircle, PackageCheck, ShieldCheck, Utensils } from "lucide-react";
 import { MenuDayTabs } from "@/components/marketing/menu-day-tabs";
+import { FoodImage } from "@/components/ui/food-image";
 
 const reasons = [
   { title: "Not fast food", text: "Balanced homemade meals that feel lighter during office hours.", icon: Utensils },
@@ -70,6 +72,13 @@ export function StorySection() {
           </p>
         </div>
         <div className="grid gap-5 sm:grid-cols-2">
+          <div className="relative min-h-80 overflow-hidden rounded-[32px] bg-card sm:col-span-2">
+            <FoodImage
+              src={foodImages.homeKitchenSpread}
+              alt="A home kitchen spread with Pakistani curries, rice, and roti"
+              sizes="(max-width: 1024px) 100vw, 50vw"
+            />
+          </div>
           <div className="rounded-[32px] bg-primary p-8 text-white">
             <ChefHat className="mb-8 size-10" />
             <div className="font-serif text-4xl font-semibold">64+</div>
@@ -180,9 +189,9 @@ export function CorporateSection() {
 
 export function ChefShowcaseSection() {
   const chefs = [
-    { name: "Chef Shazia", area: "Johar Town", specialty: "Daal, Sabzi, Chicken Salan" },
-    { name: "Chef Noreen", area: "Gulberg", specialty: "Biryani, Pulao, Raita" },
-    { name: "Chef Farah", area: "DHA", specialty: "Healthy roti meals" }
+    { name: "Chef Shazia", area: "Johar Town", specialty: "Daal, Sabzi, Chicken Salan", imageSrc: foodImages.chickenKarahi },
+    { name: "Chef Noreen", area: "Gulberg", specialty: "Biryani, Pulao, Raita", imageSrc: foodImages.chickenBiryani },
+    { name: "Chef Farah", area: "DHA", specialty: "Healthy roti meals", imageSrc: foodImages.daalChawal }
   ];
   return (
     <section className="py-20 md:py-28">
@@ -191,7 +200,13 @@ export function ChefShowcaseSection() {
         <div className="grid gap-5 md:grid-cols-3">
           {chefs.map((chef) => (
             <Card key={chef.name}>
-              <div className="mb-5 grid aspect-square place-items-center rounded-[28px] bg-[radial-gradient(circle,#d4a373_0_16%,#f8f4ec_17%_40%,#355e3b_41%_44%,#fffaf2_45%)]" />
+              <div className="relative mb-5 h-48 overflow-hidden rounded-[24px] bg-card">
+                <FoodImage
+                  src={chef.imageSrc}
+                  alt={`${chef.specialty} from ${chef.name}'s verified kitchen`}
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                />
+              </div>
               <Badge>Verified Kitchen</Badge>
               <h3 className="mt-4 font-serif text-3xl font-semibold">{chef.name}</h3>
               <p className="mt-2 text-muted">{chef.area}, Lahore</p>
@@ -255,13 +270,24 @@ export function FAQSection() {
 export function WhatsAppCTASection() {
   return (
     <section className="py-20 md:py-28">
-      <div className="container-gsd rounded-[40px] bg-primary p-8 text-center text-white md:p-16">
-        <MessageCircle className="mx-auto mb-6 size-12" />
-        <h2 className="font-serif text-4xl font-semibold md:text-6xl">Want to start from tomorrow’s lunch?</h2>
-        <p className="mx-auto mt-5 max-w-2xl leading-8 text-white/75">Order on WhatsApp and our team will confirm your area, plan, and this week’s menu.</p>
-        <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-          <ButtonLink href={whatsappUrl("Salam, I want to subscribe to Ghar Se Daftar. Please share this week’s menu and delivery availability for my office.")} variant="accent">Order on WhatsApp</ButtonLink>
-          <ButtonLink href="#menu" variant="secondary">View Weekly Menu</ButtonLink>
+      <div className="container-gsd overflow-hidden rounded-[40px] bg-primary text-white">
+        <div className="grid items-center gap-8 p-8 md:p-12 lg:grid-cols-[1fr_0.9fr]">
+          <div>
+            <MessageCircle className="mb-6 size-12" />
+            <h2 className="font-serif text-4xl font-semibold md:text-6xl">Want to start from tomorrow’s lunch?</h2>
+            <p className="mt-5 max-w-2xl leading-8 text-white/75">Order on WhatsApp and our team will confirm your area, plan, and this week’s menu.</p>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <ButtonLink href={whatsappUrl("Salam, I want to subscribe to Ghar Se Daftar. Please share this week’s menu and delivery availability for my office.")} variant="accent">Order on WhatsApp</ButtonLink>
+              <ButtonLink href="#menu" variant="secondary">View Weekly Menu</ButtonLink>
+            </div>
+          </div>
+          <div className="relative min-h-72 overflow-hidden rounded-[28px] bg-white/10">
+            <FoodImage
+              src={foodImages.chapliKebab}
+              alt="Chapli kebab platter with roti and chutney"
+              sizes="(max-width: 1024px) 100vw, 40vw"
+            />
+          </div>
         </div>
       </div>
     </section>
