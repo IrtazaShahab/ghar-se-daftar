@@ -2,6 +2,7 @@ import { ArrowRight, CheckCircle2, Clock, ShieldCheck, Sparkles } from "lucide-r
 import { ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FoodImage } from "@/components/ui/food-image";
+import { foodImages } from "@/data/food-images";
 
 const badges = ["Freshly cooked daily", "Women-led kitchens", "Office subscriptions", "WhatsApp ordering"];
 
@@ -34,6 +35,14 @@ export function HeroSection() {
           <div className="absolute -inset-6 rounded-[40px] bg-accent/20 blur-3xl" />
           <div className="glass-card relative overflow-hidden rounded-[36px] p-5">
             <div className="rounded-[28px] bg-[linear-gradient(135deg,#fffaf2,#f2e4d0)] p-5">
+              <div className="relative mb-5 h-52 overflow-hidden rounded-[24px] bg-card sm:h-64 lg:h-72">
+                <FoodImage
+                  src={foodImages.heroSpread}
+                  alt="Assorted homemade Pakistani lunch dishes on a wooden table"
+                  priority
+                  sizes="(max-width: 1024px) 100vw, 45vw"
+                />
+              </div>
               <div className="mb-4 flex items-center justify-between">
                 <Badge>Today’s Lunch</Badge>
                 <div className="flex items-center gap-2 text-sm font-bold text-primary"><Clock className="size-4" /> 12:45 PM</div>
@@ -41,9 +50,9 @@ export function HeroSection() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="rounded-[28px] bg-white p-5 shadow-xl shadow-black/5 overflow-hidden">
                   <div className="aspect-square rounded-[20px] bg-[radial-gradient(circle,#d4a373_0_14%,#f8f4ec_15%_34%,#8b5a2b_35%_38%,#355e3b_39%_43%,#fffaf2_44%)] relative overflow-hidden">
-                    <FoodImage src="/images/food/chicken-achari.jpg" alt="Chicken Achari" />
+                    <FoodImage src={foodImages.chickenKarahi} alt="Chicken Karahi with roti" />
                   </div>
-                  <h3 className="mt-5 font-serif text-2xl font-semibold">Chicken Achari</h3>
+                  <h3 className="mt-5 font-serif text-2xl font-semibold">Chicken Karahi</h3>
                   <p className="mt-1 text-sm text-muted">2 Roti + Salad</p>
                 </div>
                 <div className="space-y-4">

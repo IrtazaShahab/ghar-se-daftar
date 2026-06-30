@@ -26,8 +26,12 @@ function FoodCardComponent({
   return (
     <div className="glass-card rounded-[28px] overflow-hidden transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/5 flex flex-col h-full">
       {/* Image Container */}
-      <div className="relative w-full aspect-square bg-[linear-gradient(135deg,#fffaf2,#f2e4d0)] overflow-hidden">
-        <FoodImage src={imageSrc} alt={name} />
+      <div className="relative h-52 w-full bg-[linear-gradient(135deg,#fffaf2,#f2e4d0)] overflow-hidden sm:h-56">
+        <FoodImage
+          src={imageSrc}
+          alt={`${name} homemade lunch`}
+          sizes="(max-width: 768px) 100vw, 50vw"
+        />
       </div>
 
       {/* Content Container */}

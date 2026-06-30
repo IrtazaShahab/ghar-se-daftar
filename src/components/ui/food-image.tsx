@@ -7,6 +7,8 @@ export interface FoodImageProps {
   src: string | undefined;
   alt: string;
   className?: string;
+  sizes?: string;
+  priority?: boolean;
 }
 
 /**
@@ -14,7 +16,13 @@ export interface FoodImageProps {
  * If the image fails to load or is not provided, displays a fallback gradient.
  * Must be a client component to use onError handler.
  */
-export function FoodImage({ src, alt, className = "" }: FoodImageProps) {
+export function FoodImage({
+  src,
+  alt,
+  className = "",
+  sizes = "(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw",
+  priority = false
+}: FoodImageProps) {
   const [imageError, setImageError] = useState(false);
 
   // If no src or image failed to load, show fallback
@@ -33,8 +41,9 @@ export function FoodImage({ src, alt, className = "" }: FoodImageProps) {
       alt={alt}
       fill
       className={`object-cover ${className}`}
-      sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-      loading="lazy"
+      sizes={sizes}
+      priority={priority}
+      loading={priority ? undefined : "lazy"}
       quality={75}
       onError={() => setImageError(true)}
     />
