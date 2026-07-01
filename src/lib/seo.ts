@@ -24,7 +24,7 @@ export function getOrganizationSchema() {
     ],
     contactPoint: {
       "@type": "ContactPoint",
-      telephone: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+92 300 1234567",
+      telephone: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+92 370 4756269",
       contactType: "Customer Support",
       availableLanguage: "en,ur"
     },
@@ -46,7 +46,7 @@ export function getLocalBusinessSchema() {
     name: "Ghar Se Daftar",
     description: "Ghar Ka Khana, Ab Daftar Tak",
     url: getBaseUrl(),
-    telephone: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+92 300 1234567",
+    telephone: process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || "+92 370 4756269",
     address: {
       "@type": "PostalAddress",
       addressCity: "Lahore",

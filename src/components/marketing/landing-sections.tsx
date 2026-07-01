@@ -4,9 +4,10 @@ import { ButtonLink } from "@/components/ui/button";
 import { formatCurrencyPKR, whatsappUrl, cn } from "@/lib/utils";
 import { plans, weeklyMenu } from "@/data/menu";
 import { foodImages } from "@/data/food-images";
-import { Building2, CheckCircle2, ChefHat, HeartHandshake, MessageCircle, PackageCheck, ShieldCheck, Utensils } from "lucide-react";
+import { Award, Building2, CheckCircle2, ChefHat, HeartHandshake, MapPin, MessageCircle, PackageCheck, ShieldCheck, Sparkles, Star, Utensils } from "lucide-react";
 import { MenuDayTabs } from "@/components/marketing/menu-day-tabs";
 import { FoodImage } from "@/components/ui/food-image";
+import { FAQAccordion } from "@/components/marketing/faq-accordion";
 
 const reasons = [
   { title: "Not fast food", text: "Balanced homemade meals that feel lighter during office hours.", icon: Utensils },
@@ -141,24 +142,47 @@ export function PlansSection() {
         <SectionHeader eyebrow="Subscription plans" title="Start small, then make homemade lunch your daily office routine." />
         <div className="grid gap-5 lg:grid-cols-3">
           {plans.map((plan) => (
-            <Card key={plan.name} className={plan.highlighted ? "border-2 border-primary bg-primary text-white scale-105 shadow-2xl shadow-primary/20" : "border border-border"}>
-              {plan.highlighted ? <Badge className="mb-4 border-white/20 bg-white/10 text-white">Most popular</Badge> : null}
-              <h3 className={cn("font-serif text-3xl font-semibold", plan.highlighted ? "text-white" : "text-foreground")}>{plan.name}</h3>
-              <div className="mt-5 flex items-end gap-2">
-                <span className={cn("font-serif text-5xl font-semibold", plan.highlighted ? "text-white" : "text-foreground")}>
+            <Card
+              key={plan.name}
+              className={cn(
+                "relative flex min-h-[520px] flex-col overflow-hidden p-7 md:p-8",
+                plan.highlighted
+                  ? "scale-[1.02] border-0 text-white shadow-2xl shadow-primary/20"
+                  : "border border-border"
+              )}
+              style={plan.highlighted ? { background: "linear-gradient(145deg, #355e3b 0%, #294a31 52%, #8b5a2b 130%)" } : undefined}
+            >
+              {plan.highlighted ? (
+                <>
+                  <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-[radial-gradient(circle_at_25%_20%,rgba(212,163,115,0.42),transparent_32rem)]" />
+                  <div className="relative mb-6 flex items-center justify-between gap-3">
+                    <Badge className="border-white/20 bg-white/10 text-white shadow-sm">Most popular</Badge>
+                    <span className="grid size-11 place-items-center rounded-full bg-white/10 text-accent ring-1 ring-white/15">
+                      <Sparkles className="size-5" />
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <span className="mb-6 grid size-11 place-items-center rounded-full bg-primary/10 text-primary">
+                  <Utensils className="size-5" />
+                </span>
+              )}
+              <h3 className={cn("relative font-serif text-3xl font-semibold md:text-4xl", plan.highlighted ? "text-white" : "text-foreground")}>{plan.name}</h3>
+              <div className="relative mt-5 flex items-end gap-2">
+                <span className={cn("font-serif text-5xl font-semibold md:text-6xl", plan.highlighted ? "text-white" : "text-foreground")}>
                   {formatCurrencyPKR(plan.price).replace("PKR", "Rs.")}
                 </span>
               </div>
-              <p className={plan.highlighted ? "mt-2 text-white/75 font-medium" : "mt-2 text-muted font-medium"}>{plan.cadence}</p>
-              <p className={plan.highlighted ? "mt-5 leading-7 text-white/80" : "mt-5 leading-7 text-muted"}>{plan.description}</p>
-              <div className="mt-6 space-y-3">
+              <p className={plan.highlighted ? "relative mt-2 font-medium text-white/75" : "mt-2 font-medium text-muted"}>{plan.cadence}</p>
+              <p className={plan.highlighted ? "relative mt-5 leading-7 text-white/80" : "mt-5 leading-7 text-muted"}>{plan.description}</p>
+              <div className={cn("relative mt-7 space-y-3 rounded-[22px] p-4", plan.highlighted ? "bg-white/10 ring-1 ring-white/15" : "bg-white/45")}>
                 {plan.features.map((feature) => (
                   <div key={feature} className={cn("flex items-center gap-3 text-sm font-semibold", plan.highlighted ? "text-white/90" : "text-foreground")}>
                     <CheckCircle2 className={cn("size-4", plan.highlighted ? "text-white" : "text-primary")} /> {feature}
                   </div>
                 ))}
               </div>
-              <ButtonLink href="/subscribe" variant={plan.highlighted ? "accent" : "primary"} className="mt-8 w-full">Choose Plan</ButtonLink>
+              <ButtonLink href="/subscribe" variant={plan.highlighted ? "accent" : "primary"} className="relative mt-auto w-full shadow-lg shadow-black/10">Choose Plan</ButtonLink>
             </Card>
           ))}
         </div>
@@ -189,9 +213,9 @@ export function CorporateSection() {
 
 export function ChefShowcaseSection() {
   const chefs = [
-    { name: "Chef Shazia", area: "Johar Town", specialty: "Daal, Sabzi, Chicken Salan", imageSrc: foodImages.chickenKarahi },
-    { name: "Chef Noreen", area: "Gulberg", specialty: "Biryani, Pulao, Raita", imageSrc: foodImages.chickenBiryani },
-    { name: "Chef Farah", area: "DHA", specialty: "Healthy roti meals", imageSrc: foodImages.daalChawal }
+    { name: "Chef Shazia", area: "Johar Town", specialty: "Daal, Sabzi, Chicken Salan", imageSrc: "/images/chefs/chef-shazia.png", rating: "4.9" },
+    { name: "Chef Noreen", area: "Gulberg", specialty: "Biryani, Pulao, Raita", imageSrc: "/images/chefs/chef-noreen.png", rating: "4.8" },
+    { name: "Chef Farah", area: "DHA", specialty: "Healthy roti meals", imageSrc: "/images/chefs/chef-farah.png", rating: "4.9" }
   ];
   return (
     <section className="py-20 md:py-28">
@@ -199,18 +223,38 @@ export function ChefShowcaseSection() {
         <SectionHeader eyebrow="Home chefs" title="Verified home kitchens with real Pakistani food experience." />
         <div className="grid gap-5 md:grid-cols-3">
           {chefs.map((chef) => (
-            <Card key={chef.name}>
-              <div className="relative mb-5 h-48 overflow-hidden rounded-[24px] bg-card">
+            <Card key={chef.name} className="overflow-hidden p-0">
+              <div className="relative h-64 overflow-hidden bg-card">
                 <FoodImage
                   src={chef.imageSrc}
-                  alt={`${chef.specialty} from ${chef.name}'s verified kitchen`}
+                  alt={`${chef.name}, verified female home chef in Lahore`}
                   sizes="(max-width: 768px) 100vw, 33vw"
                 />
+                <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-foreground/55 to-transparent" />
+                <div className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-white/92 px-3 py-2 text-sm font-bold text-primary shadow-lg">
+                  <Award className="size-4" />
+                  Verified Kitchen
+                </div>
               </div>
-              <Badge>Verified Kitchen</Badge>
-              <h3 className="mt-4 font-serif text-3xl font-semibold">{chef.name}</h3>
-              <p className="mt-2 text-muted">{chef.area}, Lahore</p>
-              <p className="mt-4 font-semibold text-secondary">Specialty: {chef.specialty}</p>
+              <div className="p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-serif text-3xl font-semibold">{chef.name}</h3>
+                    <p className="mt-2 flex items-center gap-2 text-muted">
+                      <MapPin className="size-4 text-secondary" />
+                      {chef.area}, Lahore
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 rounded-full bg-accent/18 px-3 py-1.5 text-sm font-bold text-secondary">
+                    <Star className="size-4 fill-current" />
+                    {chef.rating}
+                  </div>
+                </div>
+                <div className="mt-5 rounded-[20px] border border-border bg-white/55 p-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">Specialty</p>
+                  <p className="mt-2 font-semibold text-foreground">{chef.specialty}</p>
+                </div>
+              </div>
             </Card>
           ))}
         </div>
@@ -244,24 +288,17 @@ export function TestimonialsSection() {
 
 export function FAQSection() {
   const faqs = [
-    ["Is this restaurant food?", "No. Ghar Se Daftar is a homemade meal subscription platform, not a fast-food or restaurant marketplace."],
-    ["Can I choose my meal daily?", "Yes. The recommended model gives customers two curated options per day."],
-    ["Can I pause my subscription?", "Yes. Pause/resume should be available from the customer dashboard with a cutoff time."],
-    ["Do you support corporate teams?", "Yes. Corporate packages include team counts, delivery slots, and monthly billing."],
-    ["How are chefs verified?", "Each kitchen should pass identity, hygiene, sample meal, packaging, and consistency checks before going live."]
+    { question: "Is this restaurant food?", answer: "No. Ghar Se Daftar is a homemade meal subscription platform, not a fast-food or restaurant marketplace." },
+    { question: "Can I choose my meal daily?", answer: "Yes. The recommended model gives customers two curated options per day." },
+    { question: "Can I pause my subscription?", answer: "Yes. Pause/resume should be available from the customer dashboard with a cutoff time." },
+    { question: "Do you support corporate teams?", answer: "Yes. Corporate packages include team counts, delivery slots, and monthly billing." },
+    { question: "How are chefs verified?", answer: "Each kitchen should pass identity, hygiene, sample meal, packaging, and consistency checks before going live." }
   ];
   return (
     <section className="py-20 md:py-28">
       <div className="container-gsd">
         <SectionHeader eyebrow="FAQ" title="Questions customers will ask before they trust a new lunch habit." />
-        <div className="mx-auto max-w-3xl divide-y divide-border rounded-[32px] border border-border bg-white/70 px-6">
-          {faqs.map(([q, a]) => (
-            <div key={q} className="py-6">
-              <h3 className="font-serif text-2xl font-semibold">{q}</h3>
-              <p className="mt-2 leading-7 text-muted">{a}</p>
-            </div>
-          ))}
-        </div>
+        <FAQAccordion items={faqs} />
       </div>
     </section>
   );
