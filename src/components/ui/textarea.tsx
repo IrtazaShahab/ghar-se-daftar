@@ -10,7 +10,7 @@ export const Textarea = ({ className, label, error, helpText, id, ...props }: Te
   const inputId = id || props.name;
 
   return (
-    <div className="grid gap-2">
+    <div className="grid w-full gap-2">
       {label && (
         <label htmlFor={inputId} className="text-sm font-semibold text-foreground">
           {label}
@@ -19,7 +19,7 @@ export const Textarea = ({ className, label, error, helpText, id, ...props }: Te
       <textarea
         id={inputId}
         className={cn(
-          "focus-ring rounded-2xl border border-border bg-card px-4 py-3 text-sm transition placeholder:text-muted resize-none",
+          "focus-ring min-h-28 w-full min-w-0 resize-none rounded-[18px] border border-border bg-white/85 px-4 py-3 text-sm text-foreground shadow-sm shadow-primary/5 transition placeholder:text-muted hover:border-primary/30 focus:border-primary focus:bg-white focus:shadow-md focus:shadow-primary/10 disabled:cursor-not-allowed disabled:opacity-60",
           error && "border-danger bg-danger/5",
           className
         )}

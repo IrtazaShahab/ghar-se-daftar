@@ -10,12 +10,17 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LogoFull } from "@/components/brand/logo";
 import Link from "next/link";
-import { Mail, Lock, ChefHat } from "lucide-react";
+import { Mail, Lock, ChefHat, ShieldCheck, Clock3 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const trustItems = [
+    { Icon: ChefHat, text: "Verified home chefs" },
+    { Icon: ShieldCheck, text: "Secure ordering" },
+    { Icon: Clock3, text: "Daily lunch tracking" }
+  ];
 
   const {
     register,
@@ -47,20 +52,33 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cream via-white to-primary/5">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 left-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-      </div>
+    <div className="auth-surface min-h-screen">
+      <div className="mx-auto grid min-h-screen w-full max-w-6xl items-center gap-8 px-4 py-8 md:px-8 lg:grid-cols-[0.9fr_1fr]">
+        <section className="hidden rounded-[28px] border border-primary/10 bg-primary p-8 text-white shadow-2xl shadow-primary/15 lg:block">
+          <LogoFull size="lg" className="[&_*]:text-white" />
+          <div className="mt-16 max-w-sm">
+            <p className="text-sm font-semibold uppercase tracking-[0.22em] text-white/70">Office lunch, simplified</p>
+            <h2 className="mt-4 font-serif text-5xl font-semibold leading-tight">Fresh ghar ka khana at work.</h2>
+            <p className="mt-5 text-sm leading-6 text-white/75">
+              Manage your meals, orders, and delivery updates from one calm dashboard.
+            </p>
+          </div>
+          <div className="mt-14 grid gap-3 text-sm">
+            {trustItems.map(({ Icon, text }) => (
+              <div key={text} className="flex items-center gap-3 rounded-2xl bg-white/10 px-4 py-3">
+                <Icon className="size-5" />
+                <span className="font-medium">{text}</span>
+              </div>
+            ))}
+          </div>
+        </section>
 
-      {/* Main container */}
-      <div className="relative z-10 flex items-center justify-center min-h-screen px-4 py-12">
-        <div className="w-full max-w-md">
+        <main className="w-full">
+          <div className="auth-panel mx-auto w-full max-w-md rounded-[28px] p-6 md:p-8">
           {/* Logo */}
-          <div className="text-center mb-12">
+          <div className="mb-8 text-center">
             <Link href="/">
-              <LogoFull size="lg" className="justify-center mb-8" />
+              <LogoFull size="lg" className="mb-7 justify-center lg:hidden" />
             </Link>
             <h1 className="font-serif text-3xl font-semibold text-foreground">Welcome back</h1>
             <p className="text-muted mt-2">Track your office lunch orders</p>
@@ -95,7 +113,7 @@ export default function LoginPage() {
               required
             />
 
-            <label className="flex items-center gap-2 cursor-pointer">
+            <label className="flex cursor-pointer items-center gap-3 rounded-2xl bg-primary/5 px-4 py-3">
               <input
                 type="checkbox"
                 {...register("rememberMe")}
@@ -137,7 +155,7 @@ export default function LoginPage() {
           </Link>
 
           {/* Trust section */}
-          <div className="mt-12 p-6 rounded-[20px] bg-white/80 border border-border space-y-3">
+          <div className="mt-8 grid gap-3 rounded-[22px] border border-border bg-card/70 p-5">
             <div className="flex items-start gap-3">
               <ChefHat className="size-5 text-primary flex-shrink-0 mt-1" />
               <div className="text-sm">
@@ -154,6 +172,7 @@ export default function LoginPage() {
             </div>
           </div>
         </div>
+        </main>
       </div>
     </div>
   );

@@ -46,42 +46,34 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cream via-white to-primary/5">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-20 right-10 w-72 h-72 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-10 left-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-      </div>
-
-      {/* Main container */}
-      <div className="relative z-10 py-12 px-4">
-        <div className="max-w-2xl mx-auto">
+    <div className="auth-surface min-h-screen">
+      <div className="mx-auto w-full max-w-6xl px-4 py-8 md:px-8">
           {/* Back link */}
-          <Link href="/login" className="inline-flex items-center gap-2 text-primary hover:opacity-75 transition mb-8">
+          <Link href="/login" className="mb-8 inline-flex items-center gap-2 rounded-full bg-primary/5 px-4 py-2 text-primary transition hover:bg-primary/10">
             <ArrowLeft className="size-4" />
             <span className="text-sm font-semibold">Back to login</span>
           </Link>
 
           {/* Logo */}
-          <div className="text-center mb-12">
+          <div className="mx-auto mb-10 max-w-3xl text-center">
             <Link href="/">
               <LogoFull size="lg" className="justify-center mb-8" />
             </Link>
-            <h1 className="font-serif text-4xl font-semibold text-foreground">Create Your Account</h1>
+            <h1 className="font-serif text-4xl font-semibold text-foreground md:text-5xl">Create Your Account</h1>
             <p className="text-muted mt-2">Join thousands enjoying fresh homemade office lunches</p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8 glass-card rounded-[28px] p-8 md:p-12">
+          <form onSubmit={handleSubmit(onSubmit)} className="glass-card mx-auto grid max-w-5xl gap-8 rounded-[28px] p-5 md:p-8 lg:grid-cols-[0.9fr_1.1fr]">
             {error && (
-              <div className="rounded-[16px] bg-danger/10 border border-danger/20 p-4 text-sm text-danger font-semibold">
+              <div className="rounded-[16px] bg-danger/10 border border-danger/20 p-4 text-sm text-danger font-semibold lg:col-span-2">
                 {error}
               </div>
             )}
 
             {/* Personal Information */}
-            <div>
-              <h2 className="font-semibold mb-4 flex items-center gap-2">
+            <section className="rounded-[24px] border border-border bg-white/65 p-5 md:p-6">
+              <h2 className="mb-5 flex items-center gap-2 font-semibold">
                 <User className="size-5 text-primary" />
                 Personal Information
               </h2>
@@ -123,11 +115,11 @@ export default function SignupPage() {
                   required
                 />
               </div>
-            </div>
+            </section>
 
             {/* Office Information */}
-            <div>
-              <h2 className="font-semibold mb-4 flex items-center gap-2">
+            <section className="rounded-[24px] border border-border bg-white/65 p-5 md:p-6">
+              <h2 className="mb-5 flex items-center gap-2 font-semibold">
                 <Building2 className="size-5 text-primary" />
                 Office Information (Optional)
               </h2>
@@ -150,26 +142,27 @@ export default function SignupPage() {
                 <Textarea
                   label="Office Address"
                   placeholder="Building name, floor, room number, street"
+                  className="min-h-32"
                   {...register("officeAddress")}
                   error={errors.officeAddress?.message}
                   disabled={isLoading}
                 />
               </div>
-            </div>
+            </section>
 
             {/* Password */}
-            <div>
-              <h2 className="font-semibold mb-4 flex items-center gap-2">
+            <section className="rounded-[24px] border border-border bg-white/65 p-5 md:p-6 lg:col-span-2">
+              <h2 className="mb-5 flex items-center gap-2 font-semibold">
                 <Lock className="size-5 text-primary" />
                 Security
               </h2>
-              <div className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
                 <div>
                   <Input
                     icon={Lock}
                     label="Password"
                     type="password"
-                    placeholder="Min 8 chars, 1 uppercase, 1 lowercase, 1 number"
+                    placeholder="Create a strong password"
                     {...register("password")}
                     error={errors.password?.message}
                     disabled={isLoading}
@@ -192,13 +185,13 @@ export default function SignupPage() {
                   required
                 />
               </div>
-            </div>
+            </section>
 
             {/* Submit button */}
             <Button
               type="submit"
               variant="primary"
-              className="w-full"
+              className="w-full lg:col-span-2"
               disabled={isLoading}
             >
               {isLoading ? "Creating Account..." : "Create Account"}
@@ -218,7 +211,6 @@ export default function SignupPage() {
           <p className="text-center text-xs text-muted mt-8 max-w-lg mx-auto">
             By creating an account, you agree to our Terms of Service and Privacy Policy. Your data is encrypted and secure.
           </p>
-        </div>
       </div>
     </div>
   );

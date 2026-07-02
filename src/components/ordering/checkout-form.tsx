@@ -2,7 +2,7 @@
 
 import { useCart } from "@/store/cart";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Input } from "@/components/ui/input";
@@ -44,12 +44,23 @@ export function CheckoutForm() {
     register,
     handleSubmit,
     formState: { errors },
-    watch
+    control
   } = useForm<CheckoutFormData>({
     resolver: zodResolver(checkoutSchema)
   });
 
-  const formValues = watch();
+  const watchedValues = useWatch({ control });
+  const formValues = {
+    fullName: watchedValues.fullName ?? "",
+    phone: watchedValues.phone ?? "",
+    whatsappNumber: watchedValues.whatsappNumber ?? "",
+    email: watchedValues.email ?? "",
+    company: watchedValues.company ?? "",
+    area: watchedValues.area ?? "",
+    address: watchedValues.address ?? "",
+    deliveryTime: watchedValues.deliveryTime ?? "",
+    instructions: watchedValues.instructions ?? ""
+  };
 
   if (items.length === 0) {
     return (

@@ -12,7 +12,7 @@ export const Input = ({ className, label, error, helpText, icon: Icon, id, ...pr
   const inputId = id || props.name;
 
   return (
-    <div className="grid gap-2">
+    <div className="grid w-full gap-2">
       {label && (
         <label htmlFor={inputId} className="text-sm font-semibold text-foreground">
           {label}
@@ -25,7 +25,7 @@ export const Input = ({ className, label, error, helpText, icon: Icon, id, ...pr
         <input
           id={inputId}
           className={cn(
-            "focus-ring h-12 rounded-2xl border border-border bg-card px-4 py-3 text-sm transition placeholder:text-muted",
+            "focus-ring h-[52px] w-full min-w-0 rounded-[18px] border border-border bg-white/85 px-4 py-3 text-sm text-foreground shadow-sm shadow-primary/5 transition placeholder:text-muted hover:border-primary/30 focus:border-primary focus:bg-white focus:shadow-md focus:shadow-primary/10 disabled:cursor-not-allowed disabled:opacity-60",
             Icon && "pl-12",
             error && "border-danger bg-danger/5",
             className
