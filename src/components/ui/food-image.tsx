@@ -29,7 +29,7 @@ export function FoodImage({
   if (!src || imageError) {
     return (
       <div
-        className={`w-full h-full bg-[radial-gradient(circle_at_30%_30%,#d4a373_0%_20%,#f8f4ec_21%_35%,#8b5a2b_36%_40%,#355e3b_41%_45%,#fffaf2_46%)] ${className}`}
+        className={`w-full h-full bg-[radial-gradient(circle_at_30%_30%,#d9a85f_0%_20%,#fffaf1_21%_35%,#966331_36%_40%,#214f32_41%_45%,#f6f0e4_46%)] ${className}`}
         aria-label={`${alt} - placeholder`}
       />
     );

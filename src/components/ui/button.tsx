@@ -3,10 +3,10 @@ import { cn } from "@/lib/utils";
 import { memo, forwardRef } from "react";
 
 const variants = {
-  primary: "bg-primary text-white shadow-lg shadow-primary/15 hover:bg-primary/95 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-70",
-  secondary: "bg-white text-primary border border-border hover:bg-card active:translate-y-px disabled:cursor-not-allowed disabled:opacity-70",
+  primary: "bg-primary text-white shadow-lg shadow-primary/15 hover:bg-[#183f28] active:translate-y-px disabled:cursor-not-allowed disabled:opacity-70",
+  secondary: "border border-border bg-white text-primary hover:border-primary/25 hover:bg-card active:translate-y-px disabled:cursor-not-allowed disabled:opacity-70",
   ghost: "text-primary hover:bg-primary/10",
-  accent: "bg-accent text-foreground hover:bg-accent/90"
+  accent: "bg-accent text-foreground shadow-lg shadow-accent/15 hover:bg-[#e1b66f]"
 };
 
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -18,7 +18,7 @@ const ButtonComponent = forwardRef<HTMLButtonElement, ButtonProps>(
     <button
       ref={ref}
       className={cn(
-        "focus-ring inline-flex h-[52px] items-center justify-center rounded-full px-6 text-sm font-semibold transition",
+        "focus-ring inline-flex h-[52px] items-center justify-center rounded-full px-6 text-sm font-extrabold transition",
         variants[variant],
         className
       )}
@@ -38,7 +38,7 @@ type ButtonLinkProps = React.ComponentProps<typeof Link> & {
 const ButtonLinkComponent = ({ className, variant = "primary", children, ...props }: ButtonLinkProps) => (
   <Link
     className={cn(
-      "focus-ring inline-flex h-[52px] items-center justify-center rounded-full px-6 text-sm font-semibold transition",
+      "focus-ring inline-flex h-[52px] items-center justify-center rounded-full px-6 text-sm font-extrabold transition",
       variants[variant],
       className
     )}

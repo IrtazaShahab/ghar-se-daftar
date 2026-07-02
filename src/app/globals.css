@@ -1,18 +1,18 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f8f4ec;
-  --foreground: #1f241f;
-  --primary: #355e3b;
-  --secondary: #8b5a2b;
-  --accent: #d4a373;
-  --muted: #6f756c;
-  --border: #e7ddcf;
-  --card: #fffaf2;
+  --background: #f6f0e4;
+  --foreground: #18231b;
+  --primary: #214f32;
+  --secondary: #966331;
+  --accent: #d9a85f;
+  --muted: #687166;
+  --border: #e4d8c4;
+  --card: #fffaf1;
   --danger: #b94a48;
   --success: #3f7d4a;
-  --font-inter: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --font-playfair: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-inter: Geist, "Instrument Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-playfair: Geist, "Instrument Sans", Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
 @theme inline {
@@ -38,10 +38,11 @@ html {
 
 body {
   background:
-    radial-gradient(circle at top left, rgba(212, 163, 115, 0.24), transparent 32rem),
-    linear-gradient(180deg, #f8f4ec 0%, #fffaf2 48%, #f8f4ec 100%);
+    radial-gradient(circle at top left, rgba(217, 168, 95, 0.18), transparent 31rem),
+    linear-gradient(180deg, #f6f0e4 0%, #fffaf1 45%, #f6f0e4 100%);
   color: var(--foreground);
   min-height: 100vh;
+  font-feature-settings: "rlig" 1, "calt" 1;
 }
 
 ::selection {
@@ -54,9 +55,9 @@ body {
 }
 
 .glass-card {
-  border: 1px solid rgba(231, 221, 207, 0.88);
-  background: rgba(255, 250, 242, 0.94);
-  box-shadow: 0 18px 48px rgba(53, 47, 34, 0.07);
+  border: 1px solid rgba(228, 216, 196, 0.9);
+  background: rgba(255, 250, 241, 0.94);
+  box-shadow: 0 18px 46px rgba(42, 37, 27, 0.08);
 }
 
 .auth-surface {
@@ -82,4 +83,48 @@ body {
 
 .focus-ring:focus-visible {
   box-shadow: 0 0 0 4px rgba(53, 94, 59, 0.18);
+}
+
+.section-reveal {
+  animation: fade-up 0.72s ease both;
+}
+
+.premium-lift {
+  transition: transform 240ms ease, box-shadow 240ms ease, border-color 240ms ease, background-color 240ms ease;
+}
+
+.premium-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 22px 54px rgba(28, 45, 32, 0.12);
+}
+
+.rolling-link {
+  display: inline-flex;
+  height: 1.45em;
+  overflow: hidden;
+  line-height: 1.45;
+}
+
+.rolling-link span {
+  display: grid;
+  transition: transform 260ms ease;
+}
+
+.rolling-link span::after {
+  content: attr(data-text);
+}
+
+.rolling-link:hover span {
+  transform: translateY(-50%);
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }

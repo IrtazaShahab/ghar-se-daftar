@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { WhatsAppButton } from "@/components/ui/whatsapp-button";
 import { X, Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
 import { formatCurrencyPKR } from "@/lib/utils";
+import { generateCartInquiryMessage } from "@/lib/order";
 import { FoodImage } from "@/components/ui/food-image";
 import Link from "next/link";
 import { useState } from "react";
@@ -218,7 +219,12 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     </Link>
                     <WhatsAppButton
                       variant="inline"
-                      message={`Hi, I want to place an order from Ghar Se Daftar. Plan: ${selectedPlanLabel[selectedPlan as keyof typeof selectedPlanLabel]}. Please share the order form.`}
+                      message={generateCartInquiryMessage(
+                        state.items,
+                        selectedPlan,
+                        subtotal,
+                        planPrices[selectedPlan as keyof typeof planPrices]
+                      )}
                       className="w-full"
                     />
                   </div>

@@ -34,15 +34,15 @@ function MenuDayTabsComponent() {
   return (
     <div className="w-full">
       {/* Day Tabs */}
-      <div className="mb-8 flex gap-2 overflow-x-auto pb-2 md:gap-3 md:overflow-visible">
+      <div className="mb-8 flex gap-2 overflow-x-auto rounded-[28px] border border-border bg-white/45 p-2 shadow-sm md:gap-3 md:overflow-visible">
         {weeklyMenu.map((menu, index) => (
           <button
             key={menu.day}
             onClick={() => setSelectedDay(index)}
-            className={`flex-shrink-0 px-4 py-3 rounded-full font-semibold transition text-sm md:text-base ${
+            className={`flex-shrink-0 rounded-full px-4 py-3 text-sm font-extrabold transition md:text-base ${
               selectedDay === index
-                ? "bg-primary text-white"
-                : "border border-border bg-white/50 text-foreground hover:bg-white/80"
+                ? "bg-primary text-white shadow-lg shadow-primary/15"
+                : "text-primary/70 hover:bg-white/80 hover:text-primary"
             }`}
           >
             <div>{menu.day}</div>

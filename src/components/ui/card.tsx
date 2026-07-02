@@ -5,7 +5,7 @@ function CardComponent({ className, ...props }: React.HTMLAttributes<HTMLDivElem
   return (
     <div
       className={cn(
-        "glass-card rounded-[28px] p-6 transition hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/5",
+        "glass-card premium-lift rounded-[26px] p-6",
         className
       )}
       {...props}
@@ -15,7 +15,7 @@ function CardComponent({ className, ...props }: React.HTMLAttributes<HTMLDivElem
 
 function SectionLabelComponent({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mb-4 inline-flex rounded-full border border-border bg-white/70 px-4 py-2 text-xs font-bold uppercase tracking-[0.22em] text-secondary">
+    <div className="mb-4 inline-flex rounded-full border border-primary/10 bg-white/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-primary">
       {children}
     </div>
   );
@@ -23,12 +23,12 @@ function SectionLabelComponent({ children }: { children: React.ReactNode }) {
 
 function SectionHeaderComponent({ eyebrow, title, description }: { eyebrow?: string; title: string; description?: string }) {
   return (
-    <div className="mx-auto mb-12 max-w-3xl text-center">
+    <div className="section-reveal mx-auto mb-12 max-w-3xl text-center">
       {eyebrow ? <SectionLabel>{eyebrow}</SectionLabel> : null}
-      <h2 className="font-serif text-4xl font-semibold leading-tight text-balance text-foreground md:text-5xl">
+      <h2 className="text-balance text-3xl font-extrabold leading-[1.08] tracking-[-0.03em] text-foreground md:text-5xl">
         {title}
       </h2>
-      {description ? <p className="mt-5 text-lg leading-8 text-muted">{description}</p> : null}
+      {description ? <p className="mt-5 text-base leading-8 text-muted md:text-lg">{description}</p> : null}
     </div>
   );
 }

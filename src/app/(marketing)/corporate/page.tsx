@@ -12,7 +12,7 @@ export default function CorporatePage() {
   return (
     <>
       <MarketingNav />
-      <main className="py-20 md:py-28">
+      <main className="py-16 md:py-24">
         <div className="container-gsd">
           <SectionHeader
             eyebrow="Corporate packages"
@@ -21,7 +21,7 @@ export default function CorporatePage() {
           />
           <div className="grid gap-5 md:grid-cols-3">
             {["Team meal counts", "Dedicated delivery slots", "Monthly invoices"].map((item) => (
-              <Card key={item}><h3 className="font-serif text-3xl font-semibold">{item}</h3></Card>
+              <Card key={item}><h3 className="text-2xl font-extrabold tracking-[-0.03em]">{item}</h3></Card>
             ))}
           </div>
           <div className="mt-10 text-center">

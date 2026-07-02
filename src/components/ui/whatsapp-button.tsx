@@ -2,6 +2,7 @@
 
 import { MessageCircle } from "lucide-react";
 import { whatsappUrl } from "@/lib/utils";
+import { generateSubscriptionInquiryMessage } from "@/lib/order";
 import Link from "next/link";
 
 export interface WhatsAppButtonProps {
@@ -11,7 +12,7 @@ export interface WhatsAppButtonProps {
 }
 
 export function WhatsAppButton({
-  message = "Salam, I want to subscribe to Ghar Se Daftar. Please share this week's menu and delivery availability for my office.",
+  message = generateSubscriptionInquiryMessage(),
   className = "",
   variant = "floating"
 }: WhatsAppButtonProps) {

@@ -14,7 +14,7 @@ export default function MenuPage() {
       <MarketingNav />
       <main>
         {/* Hero Section */}
-        <section className="py-16 md:py-24 bg-gradient-to-b from-primary/5 to-transparent">
+        <section className="bg-gradient-to-b from-primary/10 to-transparent py-16 md:py-24">
           <div className="container-gsd">
             <SectionHeader
               eyebrow="This week's menu"
@@ -54,7 +54,7 @@ export default function MenuPage() {
                 }
               ].map((item) => (
                 <Card key={item.title}>
-                  <h3 className="font-serif text-2xl font-semibold">{item.title}</h3>
+                  <h3 className="text-xl font-extrabold tracking-[-0.02em]">{item.title}</h3>
                   <p className="mt-3 leading-7 text-muted">{item.description}</p>
                 </Card>
               ))}

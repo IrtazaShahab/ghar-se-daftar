@@ -3,6 +3,7 @@
 import { useSearchParams } from "next/navigation";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { WhatsAppButton } from "@/components/ui/whatsapp-button";
+import { generateOrderConfirmationMessage } from "@/lib/order";
 import { Check, CheckCircle2, Clock, Phone, MapPin } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -121,7 +122,7 @@ export function OrderSuccessContent() {
       {/* Action Buttons */}
       <div className="space-y-3">
         <WhatsAppButton
-          message={`Hi! I just placed an order with Ghar Se Daftar. My order reference is ${orderId}. Please confirm my order.`}
+          message={generateOrderConfirmationMessage(orderId)}
           variant="inline"
           className="w-full"
         />

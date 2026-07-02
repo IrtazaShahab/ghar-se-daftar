@@ -3,40 +3,44 @@
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui/button";
 import { LogoFull } from "@/components/brand/logo";
-import { ShoppingBag } from "lucide-react";
+import { Menu, ShoppingBag, X } from "lucide-react";
 import { useCart } from "@/store/cart";
 import { useCartDrawer } from "@/components/providers/root-providers";
+import { useState } from "react";
 
 const links = [
   { label: "Menu", href: "/menu" },
-  { label: "Plans", href: "/plans" },
+  { label: "Plans", href: "/#plans" },
   { label: "Corporate", href: "/corporate" },
-  { label: "Home Chefs", href: "/home-chefs" },
-  { label: "FAQ", href: "/faq" }
+  { label: "Home Chefs", href: "/#chefs" },
+  { label: "FAQ", href: "/#faq" }
 ];
 
 export function MarketingNav() {
   const { state } = useCart();
   const { openCart } = useCartDrawer();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border/70 bg-background/80 backdrop-blur-xl">
+    <header className="sticky top-0 z-50 border-b border-white/45 bg-[#f6f0e4]/86 backdrop-blur-xl">
       <nav className="container-gsd flex h-20 items-center justify-between">
-        <Link href="/">
+        <Link href="/" className="group">
           <LogoFull size="sm" />
         </Link>
-        <div className="hidden items-center gap-8 md:flex">
+
+        <div className="hidden items-center gap-7 rounded-full border border-border/80 bg-white/55 px-6 py-3 shadow-sm md:flex">
           {links.map((link) => (
-            <Link key={link.href} href={link.href} className="text-sm font-semibold text-muted transition hover:text-primary">
-              {link.label}
+            <Link key={link.href} href={link.href} className="rolling-link text-sm font-bold text-primary/75 transition hover:text-primary">
+              <span data-text={link.label}>{link.label}</span>
             </Link>
           ))}
         </div>
+
         <div className="flex items-center gap-3">
           <button
             onClick={openCart}
-            className="relative rounded-full p-2 hover:bg-card transition"
+            className="focus-ring relative grid size-11 place-items-center rounded-full border border-border bg-white/70 transition hover:border-primary/20 hover:bg-white"
             aria-label="Open cart"
           >
             <ShoppingBag className="size-5 text-primary" />
@@ -47,9 +51,38 @@ export function MarketingNav() {
             )}
           </button>
           <ButtonLink href="/login" variant="secondary" className="hidden md:inline-flex">Login</ButtonLink>
-          <ButtonLink href="/subscribe">Start Plan</ButtonLink>
+          <ButtonLink href="/subscribe" className="hidden md:inline-flex">Start Plan</ButtonLink>
+          <button
+            className="focus-ring grid size-11 place-items-center rounded-full bg-primary text-white md:hidden"
+            onClick={() => setIsMenuOpen((open) => !open)}
+            aria-label={isMenuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={isMenuOpen}
+          >
+            {isMenuOpen ? <X className="size-5" /> : <Menu className="size-5" />}
+          </button>
         </div>
       </nav>
+
+      {isMenuOpen ? (
+        <div className="border-t border-border/70 bg-card/96 px-4 py-5 shadow-2xl shadow-primary/10 md:hidden">
+          <div className="mx-auto grid max-w-sm gap-2">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setIsMenuOpen(false)}
+                className="rounded-2xl px-4 py-3 text-base font-bold text-primary transition hover:bg-primary/10"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <ButtonLink href="/login" variant="secondary" onClick={() => setIsMenuOpen(false)}>Login</ButtonLink>
+              <ButtonLink href="/subscribe" onClick={() => setIsMenuOpen(false)}>Start Plan</ButtonLink>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </header>
   );
 }
