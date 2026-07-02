@@ -25,6 +25,13 @@ export const metadata: Metadata = {
   authors: [{ name: "Ghar Se Daftar" }],
   creator: "Ghar Se Daftar",
   publisher: "Ghar Se Daftar",
+  icons: {
+    icon: [
+      { url: "/favicon.svg", type: "image/svg+xml" }
+    ],
+    shortcut: "/favicon.svg",
+    apple: "/favicon.svg"
+  },
   formatDetection: {
     email: false,
     telephone: false,
