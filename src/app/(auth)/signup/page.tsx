@@ -16,6 +16,7 @@ import { User, Mail, Phone, Lock, Building2, MapPin, ArrowLeft } from "lucide-re
 export default function SignupPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -29,11 +30,17 @@ export default function SignupPage() {
   const onSubmit = async (data: SignupInput) => {
     setIsLoading(true);
     setError(null);
+    setMessage(null);
 
     try {
       const result = await signup(data);
 
       if (result.success) {
+        if ("requiresEmailConfirmation" in result && result.requiresEmailConfirmation) {
+          setMessage(result.message || "Account created. Please confirm your email before logging in.");
+          return;
+        }
+
         router.push("/dashboard/customer");
       } else {
         setError(result.error || "Signup failed");
@@ -68,6 +75,11 @@ export default function SignupPage() {
             {error && (
               <div className="rounded-[16px] bg-danger/10 border border-danger/20 p-4 text-sm text-danger font-semibold lg:col-span-2">
                 {error}
+              </div>
+            )}
+            {message && (
+              <div className="rounded-[16px] bg-success/10 border border-success/20 p-4 text-sm text-success font-semibold lg:col-span-2">
+                {message}
               </div>
             )}
 

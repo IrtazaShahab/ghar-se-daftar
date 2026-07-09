@@ -1,33 +1,55 @@
 "use server";
 
 import { prisma } from "@/lib/db/prisma";
-import { hashPassword, verifyPassword } from "@/lib/auth/password";
+import { getCurrentUser as getAuthenticatedUser } from "@/lib/auth/get-user";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { signupSchema, loginSchema, type SignupInput, type LoginInput } from "@/lib/validations/auth";
-import { cookies } from "next/headers";
 
-// TODO: Implement actual session storage when database is connected
-const SESSIONS: Map<string, { userId: string; expiresAt: number }> = new Map();
+function getAuthErrorMessage(message?: string) {
+  const normalized = message?.toLowerCase() ?? "";
 
-/**
- * Generate a simple session token
- */
-function generateSessionToken(): string {
-  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+  if (normalized.includes("invalid login credentials")) {
+    return "Invalid email/phone or password";
+  }
+
+  if (normalized.includes("email not confirmed")) {
+    return "Please confirm your email before logging in.";
+  }
+
+  if (normalized.includes("already registered") || normalized.includes("already exists")) {
+    return "Email already registered";
+  }
+
+  return message || "Authentication failed. Please try again.";
+}
+
+async function writeAuditLog(actorId: string, action: string, entityId = actorId) {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        actorId,
+        action,
+        entity: "User",
+        entityId
+      }
+    });
+  } catch (error) {
+    console.error("Audit log error:", error);
+  }
 }
 
 /**
- * Sign up a new user
+ * Sign up a new user in Supabase Auth and create the app profile in Prisma.
  */
 export async function signup(input: SignupInput) {
   try {
-    // Validate input
     const validatedData = signupSchema.parse(input);
+    const email = validatedData.email.toLowerCase();
 
-    // Check if email or phone already exists
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [
-          { email: validatedData.email.toLowerCase() },
+          { email },
           { phone: validatedData.phone }
         ]
       }
@@ -40,18 +62,34 @@ export async function signup(input: SignupInput) {
       };
     }
 
-    // Hash password
-    const passwordHash = await hashPassword(validatedData.password);
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: validatedData.password,
+      options: {
+        data: {
+          full_name: validatedData.fullName,
+          phone: validatedData.phone
+        }
+      }
+    });
 
-    // Create user
-    const user = await prisma.user.create({
+    if (error || !data.user) {
+      return {
+        success: false,
+        error: getAuthErrorMessage(error?.message)
+      };
+    }
+
+    await prisma.user.create({
       data: {
-        email: validatedData.email.toLowerCase(),
+        id: data.user.id,
+        email,
         phone: validatedData.phone,
         fullName: validatedData.fullName,
-        passwordHash,
         role: "CUSTOMER",
         status: "ACTIVE",
+        emailVerified: data.user.email_confirmed_at ? new Date(data.user.email_confirmed_at) : null,
         profile: {
           create: {
             whatsappNumber: validatedData.whatsappNumber,
@@ -60,40 +98,16 @@ export async function signup(input: SignupInput) {
             officeAddress: validatedData.officeAddress || null
           }
         }
-      },
-      include: { profile: true }
-    });
-
-    // Create session
-    const sessionToken = generateSessionToken();
-    const expiresAt = Date.now() + 30 * 24 * 60 * 60 * 1000; // 30 days
-
-    // Store session (TODO: persist to database when ready)
-    SESSIONS.set(sessionToken, { userId: user.id, expiresAt });
-
-    // Set secure HTTP-only cookie
-    const cookieStore = await cookies();
-    cookieStore.set("session", sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 30 * 24 * 60 * 60 // 30 days
-    });
-
-    // Log signup
-    await prisma.auditLog.create({
-      data: {
-        actorId: user.id,
-        action: "USER_SIGNUP",
-        entity: "User",
-        entityId: user.id
       }
     });
 
+    await writeAuditLog(data.user.id, "USER_SIGNUP");
+
     return {
       success: true,
-      userId: user.id,
-      message: "Account created successfully"
+      userId: data.user.id,
+      requiresEmailConfirmation: !data.session,
+      message: data.session ? "Account created successfully" : "Account created. Please confirm your email before logging in."
     };
   } catch (error) {
     console.error("Signup error:", error);
@@ -105,73 +119,76 @@ export async function signup(input: SignupInput) {
 }
 
 /**
- * Log in a user
+ * Log in using Supabase Auth. Phone login resolves to the stored email first.
  */
 export async function login(input: LoginInput) {
   try {
-    // Validate input
     const validatedData = loginSchema.parse(input);
+    const identifier = validatedData.emailOrPhone.trim();
+    const email = identifier.includes("@")
+      ? identifier.toLowerCase()
+      : (await prisma.user.findUnique({ where: { phone: identifier }, select: { email: true } }))?.email;
 
-    // Find user by email or phone
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [
-          { email: validatedData.emailOrPhone.toLowerCase() },
-          { phone: validatedData.emailOrPhone }
-        ]
-      }
-    });
-
-    if (!user || !user.passwordHash) {
-      // Generic error message to prevent email enumeration
+    if (!email) {
       return {
         success: false,
         error: "Invalid email/phone or password"
       };
     }
 
-    // Check if account is active
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password: validatedData.password
+    });
+
+    if (error || !data.user) {
+      return {
+        success: false,
+        error: getAuthErrorMessage(error?.message)
+      };
+    }
+
+    let user = await prisma.user.findUnique({
+      where: { id: data.user.id },
+      select: { id: true, role: true, status: true }
+    });
+
+    if (!user) {
+      user = await prisma.user.findUnique({
+        where: { email },
+        select: { id: true, role: true, status: true }
+      });
+    }
+
+    if (!user) {
+      const fullName =
+        typeof data.user.user_metadata.full_name === "string" && data.user.user_metadata.full_name.trim()
+          ? data.user.user_metadata.full_name
+          : email.split("@")[0];
+
+      user = await prisma.user.create({
+        data: {
+          id: data.user.id,
+          email,
+          fullName,
+          role: "CUSTOMER",
+          status: "ACTIVE",
+          profile: { create: {} }
+        },
+        select: { id: true, role: true, status: true }
+      });
+    }
+
     if (user.status !== "ACTIVE") {
+      await supabase.auth.signOut();
       return {
         success: false,
         error: "Your account is not active. Please contact support."
       };
     }
 
-    // Verify password
-    const passwordValid = await verifyPassword(validatedData.password, user.passwordHash);
-    if (!passwordValid) {
-      return {
-        success: false,
-        error: "Invalid email/phone or password"
-      };
-    }
-
-    // Create session
-    const sessionToken = generateSessionToken();
-    const expiresAt = Date.now() + (validatedData.rememberMe ? 60 : 30) * 24 * 60 * 60 * 1000; // 60 or 30 days
-
-    // Store session (TODO: persist to database when ready)
-    SESSIONS.set(sessionToken, { userId: user.id, expiresAt });
-
-    // Set secure HTTP-only cookie
-    const cookieStore = await cookies();
-    cookieStore.set("session", sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: (validatedData.rememberMe ? 60 : 30) * 24 * 60 * 60
-    });
-
-    // Log login
-    await prisma.auditLog.create({
-      data: {
-        actorId: user.id,
-        action: "USER_LOGIN",
-        entity: "User",
-        entityId: user.id
-      }
-    });
+    await writeAuditLog(user.id, "USER_LOGIN");
 
     return {
       success: true,
@@ -189,19 +206,19 @@ export async function login(input: LoginInput) {
 }
 
 /**
- * Log out a user
+ * Log out the current Supabase Auth session.
  */
 export async function logout() {
   try {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get("session")?.value;
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase.auth.signOut();
 
-    if (sessionToken) {
-      SESSIONS.delete(sessionToken);
+    if (error) {
+      return {
+        success: false,
+        error: "Failed to log out"
+      };
     }
-
-    // Clear session cookie
-    cookieStore.delete("session");
 
     return {
       success: true,
@@ -216,37 +233,6 @@ export async function logout() {
   }
 }
 
-/**
- * Get current user from session
- */
 export async function getCurrentUser() {
-  try {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get("session")?.value;
-
-    if (!sessionToken) {
-      return null;
-    }
-
-    // Check session validity
-    const session = SESSIONS.get(sessionToken);
-    if (!session || session.expiresAt < Date.now()) {
-      return null;
-    }
-
-    // Fetch user from database
-    const user = await prisma.user.findUnique({
-      where: { id: session.userId },
-      include: { profile: true }
-    });
-
-    if (!user || user.status !== "ACTIVE") {
-      return null;
-    }
-
-    return user;
-  } catch (error) {
-    console.error("Get current user error:", error);
-    return null;
-  }
+  return getAuthenticatedUser();
 }

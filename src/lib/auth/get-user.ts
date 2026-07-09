@@ -1,31 +1,20 @@
 import { prisma } from "@/lib/db/prisma";
-import { cookies } from "next/headers";
-
-// TODO: Move sessions to database when ready
-const SESSIONS: Map<string, { userId: string; expiresAt: number }> = new Map();
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
- * Get current user from session cookie (server-side only)
- * Returns null if not authenticated or session expired
+ * Get the current Supabase-authenticated user with app profile data.
  */
 export async function getCurrentUser() {
   try {
-    const cookieStore = await cookies();
-    const sessionToken = cookieStore.get("session")?.value;
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.getUser();
 
-    if (!sessionToken) {
+    if (error || !data.user) {
       return null;
     }
 
-    // Check session validity
-    const session = SESSIONS.get(sessionToken);
-    if (!session || session.expiresAt < Date.now()) {
-      return null;
-    }
-
-    // Fetch user from database
     const user = await prisma.user.findUnique({
-      where: { id: session.userId },
+      where: { id: data.user.id },
       include: {
         profile: true,
         addresses: {
@@ -46,7 +35,7 @@ export async function getCurrentUser() {
 }
 
 /**
- * Require authentication - throw if not authenticated
+ * Require authentication - throw if not authenticated.
  */
 export async function requireAuth() {
   const user = await getCurrentUser();
@@ -57,7 +46,7 @@ export async function requireAuth() {
 }
 
 /**
- * Require specific role - throw if wrong role
+ * Require a specific app role - throw if wrong role.
  */
 export async function requireRole(allowedRoles: string[]) {
   const user = await requireAuth();
