@@ -6,7 +6,8 @@ import { LogoFull } from "@/components/brand/logo";
 import { Menu, ShoppingBag, X } from "lucide-react";
 import { useCart } from "@/store/cart";
 import { useCartDrawer } from "@/components/providers/root-providers";
-import { useState } from "react";
+import { getCurrentUser } from "@/app/actions/auth";
+import { useEffect, useState } from "react";
 
 const links = [
   { label: "Menu", href: "/menu" },
@@ -20,7 +21,20 @@ export function MarketingNav() {
   const { state } = useCart();
   const { openCart } = useCartDrawer();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    getCurrentUser().then((user) => {
+      if (isMounted) setIsAuthenticated(Boolean(user));
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/45 bg-[#f6f0e4]/86 backdrop-blur-xl">
@@ -50,7 +64,9 @@ export function MarketingNav() {
               </span>
             )}
           </button>
-          <ButtonLink href="/login" variant="secondary" className="hidden md:inline-flex">Login</ButtonLink>
+          {isAuthenticated === false ? (
+            <ButtonLink href="/login" variant="secondary" className="hidden md:inline-flex">Login</ButtonLink>
+          ) : null}
           <ButtonLink href="/subscribe" className="hidden md:inline-flex">Start Plan</ButtonLink>
           <button
             className="focus-ring grid size-11 place-items-center rounded-full bg-primary text-white md:hidden"
@@ -77,7 +93,9 @@ export function MarketingNav() {
               </Link>
             ))}
             <div className="mt-3 grid grid-cols-2 gap-3">
-              <ButtonLink href="/login" variant="secondary" onClick={() => setIsMenuOpen(false)}>Login</ButtonLink>
+              {isAuthenticated === false ? (
+                <ButtonLink href="/login" variant="secondary" onClick={() => setIsMenuOpen(false)}>Login</ButtonLink>
+              ) : null}
               <ButtonLink href="/subscribe" onClick={() => setIsMenuOpen(false)}>Start Plan</ButtonLink>
             </div>
           </div>

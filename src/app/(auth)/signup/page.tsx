@@ -36,12 +36,11 @@ export default function SignupPage() {
       const result = await signup(data);
 
       if (result.success) {
-        if ("requiresEmailConfirmation" in result && result.requiresEmailConfirmation) {
-          setMessage(result.message || "Account created. Please confirm your email before logging in.");
-          return;
-        }
-
-        router.push("/dashboard/customer");
+        // Show success message then navigate to login so user can authenticate.
+        setMessage(result.message || "Account created successfully. Redirecting to login...");
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000);
       } else {
         setError(result.error || "Signup failed");
       }

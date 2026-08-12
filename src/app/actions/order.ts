@@ -2,6 +2,7 @@
 
 import { CartItem } from "@/store/cart";
 import { CheckoutFormData } from "@/lib/order";
+import { getCurrentUser } from "@/lib/auth/get-user";
 
 interface OrderPayload {
   customer: CheckoutFormData;
@@ -26,6 +27,15 @@ interface OrderPayload {
  */
 export async function submitOrder(payload: OrderPayload) {
   try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return {
+        success: false,
+        error: "Please log in before placing an order."
+      };
+    }
+
     // Validate input
     if (!payload.customer || !payload.items || payload.items.length === 0) {
       return {

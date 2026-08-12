@@ -4,7 +4,9 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")
+  // The configured transaction-pooler endpoint on port 6543 is not reachable.
+  // Use the working Supabase session-pooler endpoint for application queries too.
+  url       = env("DIRECT_URL")
   directUrl = env("DIRECT_URL")
 }
 
