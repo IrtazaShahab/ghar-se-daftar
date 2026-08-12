@@ -98,24 +98,89 @@ body {
   box-shadow: 0 22px 54px rgba(28, 45, 32, 0.12);
 }
 
-.rolling-link {
+.menu-tabs-scroll {
+  scrollbar-width: none;
+  overscroll-behavior-inline: contain;
+}
+
+.menu-tabs-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.menu-tab-button {
+  transition: color 220ms ease-in-out, background-color 220ms ease-in-out,
+    box-shadow 220ms ease-in-out, transform 220ms ease-in-out;
+}
+
+.menu-tab-button:hover {
+  transform: translateY(-1px);
+}
+
+.menu-tab-button.is-active {
+  animation: menu-tab-select 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.menu-panel-enter > * {
+  animation: menu-card-in 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.menu-panel-enter > *:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.nav-link {
+  position: relative;
   display: inline-flex;
-  height: 1.45em;
-  overflow: hidden;
-  line-height: 1.45;
+  padding-block: 0.25rem;
+  transition: color 200ms ease-in-out, transform 200ms ease-in-out;
 }
 
-.rolling-link span {
-  display: grid;
-  transition: transform 260ms ease;
+.nav-link::after {
+  position: absolute;
+  right: 0;
+  bottom: -0.125rem;
+  left: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--primary);
+  content: "";
+  transform: scaleX(0);
+  transform-origin: center;
+  transition: transform 200ms ease-in-out;
 }
 
-.rolling-link span::after {
-  content: attr(data-text);
+.nav-link:hover,
+.nav-link:focus-visible {
+  color: var(--primary);
+  transform: translateY(-1px);
 }
 
-.rolling-link:hover span {
-  transform: translateY(-50%);
+.nav-link:hover::after,
+.nav-link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.nav-link:focus-visible {
+  border-radius: 0.25rem;
+  outline: 2px solid rgba(33, 79, 50, 0.3);
+  outline-offset: 4px;
+}
+
+.nav-icon-button,
+.nav-mobile-link {
+  transition: color 200ms ease-in-out, background-color 200ms ease-in-out,
+    border-color 200ms ease-in-out, transform 200ms ease-in-out,
+    box-shadow 200ms ease-in-out;
+}
+
+.nav-icon-button:hover {
+  transform: translateY(-1px) scale(1.03);
+  box-shadow: 0 6px 18px rgba(33, 79, 50, 0.1);
+}
+
+.nav-mobile-link:hover,
+.nav-mobile-link:focus-visible {
+  transform: translateX(3px);
 }
 
 @keyframes fade-up {
@@ -126,5 +191,37 @@ body {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes menu-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes menu-tab-select {
+  from {
+    transform: scale(0.96);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-tab-button,
+  .menu-panel-enter > *,
+  .nav-link,
+  .nav-link::after,
+  .nav-icon-button,
+  .nav-mobile-link {
+    transition: none;
+    animation: none;
   }
 }

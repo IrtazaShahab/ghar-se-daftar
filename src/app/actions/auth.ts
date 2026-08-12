@@ -3,7 +3,16 @@
 import { prisma } from "@/lib/db/prisma";
 import { getCurrentUser as getAuthenticatedUser } from "@/lib/auth/get-user";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import { signupSchema, loginSchema, type SignupInput, type LoginInput } from "@/lib/validations/auth";
+import {
+  forgotPasswordSchema,
+  loginSchema,
+  resetPasswordSchema,
+  signupSchema,
+  type ForgotPasswordInput,
+  type LoginInput,
+  type ResetPasswordInput,
+  type SignupInput
+} from "@/lib/validations/auth";
 
 function getAuthErrorMessage(message?: string) {
   const normalized = message?.toLowerCase() ?? "";
@@ -81,8 +90,9 @@ export async function signup(input: SignupInput) {
       };
     }
 
-    await prisma.user.create({
-      data: {
+    await prisma.user.upsert({
+      where: { id: data.user.id },
+      create: {
         id: data.user.id,
         email,
         phone: validatedData.phone,
@@ -96,6 +106,27 @@ export async function signup(input: SignupInput) {
             companyName: validatedData.companyName || null,
             deliveryArea: validatedData.deliveryArea || null,
             officeAddress: validatedData.officeAddress || null
+          }
+        }
+      },
+      update: {
+        email,
+        phone: validatedData.phone,
+        fullName: validatedData.fullName,
+        profile: {
+          upsert: {
+            create: {
+              whatsappNumber: validatedData.whatsappNumber,
+              companyName: validatedData.companyName || null,
+              deliveryArea: validatedData.deliveryArea || null,
+              officeAddress: validatedData.officeAddress || null
+            },
+            update: {
+              whatsappNumber: validatedData.whatsappNumber,
+              companyName: validatedData.companyName || null,
+              deliveryArea: validatedData.deliveryArea || null,
+              officeAddress: validatedData.officeAddress || null
+            }
           }
         }
       }
@@ -229,6 +260,81 @@ export async function logout() {
     return {
       success: false,
       error: "Failed to log out"
+    };
+  }
+}
+
+/**
+ * Send a Supabase password recovery email. The response is intentionally
+ * generic so callers cannot use this endpoint to discover registered users.
+ */
+export async function forgotPassword(input: ForgotPasswordInput) {
+  try {
+    const { emailOrPhone } = forgotPasswordSchema.parse(input);
+    const identifier = emailOrPhone.trim();
+    const email = identifier.includes("@")
+      ? identifier.toLowerCase()
+      : (await prisma.user.findUnique({
+          where: { phone: identifier },
+          select: { email: true }
+        }))?.email;
+
+    if (email) {
+      const supabase = await createSupabaseServerClient();
+      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+      const redirectTo = new URL("/auth/callback", appUrl);
+      redirectTo.searchParams.set("next", "/reset-password");
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectTo.toString()
+      });
+
+      if (error) {
+        console.error("Password recovery error:", error);
+        return {
+          success: false,
+          error: getAuthErrorMessage(error.message)
+        };
+      }
+    }
+
+    return {
+      success: true,
+      message: "If an account matches those details, a reset link has been sent."
+    };
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    return {
+      success: false,
+      error: "Unable to send reset instructions. Please try again."
+    };
+  }
+}
+
+export async function resetPassword(input: ResetPasswordInput) {
+  try {
+    const { password } = resetPasswordSchema.parse(input);
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.updateUser({ password });
+
+    if (error || !data.user) {
+      return {
+        success: false,
+        error: error?.message || "Your reset link is invalid or has expired."
+      };
+    }
+
+    await writeAuditLog(data.user.id, "USER_PASSWORD_RESET");
+
+    return {
+      success: true,
+      message: "Password updated successfully. You can now log in."
+    };
+  } catch (error) {
+    console.error("Reset password error:", error);
+    return {
+      success: false,
+      error: "Unable to reset password. Please request a new reset link."
     };
   }
 }

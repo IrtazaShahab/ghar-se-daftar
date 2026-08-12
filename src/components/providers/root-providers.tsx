@@ -14,6 +14,7 @@ export function RootProviders({ children }: { children: ReactNode }) {
     pathname.startsWith("/login") ||
     pathname.startsWith("/signup") ||
     pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/reset-password") ||
     pathname.startsWith("/dashboard") ||
     pathname.startsWith("/unauthorized");
 

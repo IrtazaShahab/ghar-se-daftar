@@ -50,8 +50,9 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   };
 
   const handleSelectPlan = (plan: string) => {
-    setSelectedPlan(plan);
-    dispatch({ type: "SET_PLAN", payload: plan as any });
+    const selected = plan as "single" | "weekly" | "monthly" | "corporate";
+    setSelectedPlan(selected);
+    dispatch({ type: "SET_PLAN", payload: selected });
   };
 
   const isEmpty = state.items.length === 0;

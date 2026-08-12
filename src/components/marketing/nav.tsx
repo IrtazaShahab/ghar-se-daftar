@@ -31,8 +31,8 @@ export function MarketingNav() {
 
         <div className="hidden items-center gap-7 rounded-full border border-border/80 bg-white/55 px-6 py-3 shadow-sm md:flex">
           {links.map((link) => (
-            <Link key={link.href} href={link.href} className="rolling-link text-sm font-bold text-primary/75 transition hover:text-primary">
-              <span data-text={link.label}>{link.label}</span>
+            <Link key={link.href} href={link.href} className="nav-link text-sm font-bold text-primary/75">
+              <span>{link.label}</span>
             </Link>
           ))}
         </div>
@@ -40,7 +40,7 @@ export function MarketingNav() {
         <div className="flex items-center gap-3">
           <button
             onClick={openCart}
-            className="focus-ring relative grid size-11 place-items-center rounded-full border border-border bg-white/70 transition hover:border-primary/20 hover:bg-white"
+            className="focus-ring nav-icon-button relative grid size-11 place-items-center rounded-full border border-border bg-white/70 hover:border-primary/20 hover:bg-white"
             aria-label="Open cart"
           >
             <ShoppingBag className="size-5 text-primary" />
@@ -71,7 +71,7 @@ export function MarketingNav() {
                 key={link.href}
                 href={link.href}
                 onClick={() => setIsMenuOpen(false)}
-                className="rounded-2xl px-4 py-3 text-base font-bold text-primary transition hover:bg-primary/10"
+                className="nav-mobile-link rounded-2xl px-4 py-3 text-base font-bold text-primary hover:bg-primary/10"
               >
                 {link.label}
               </Link>

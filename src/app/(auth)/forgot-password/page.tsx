@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { forgotPasswordSchema, type ForgotPasswordInput } from "@/lib/validations/auth";
+import { forgotPassword } from "@/app/actions/auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LogoFull } from "@/components/brand/logo";
@@ -14,6 +15,7 @@ export default function ForgotPasswordPage() {
   const [submitted, setSubmitted] = useState(false);
   const [submittedTo, setSubmittedTo] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const {
     register,
@@ -25,18 +27,19 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotPasswordInput) => {
     setIsLoading(true);
+    setError(null);
 
     try {
-      // TODO: Implement OTP/reset link sending via:
-      // - Email service (SendGrid, AWS SES)
-      // - SMS service (Twillio, AWS SNS)
-
-      // Placeholder: just show success
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setSubmittedTo(data.emailOrPhone);
-      setSubmitted(true);
+      const result = await forgotPassword(data);
+      if (result.success) {
+        setSubmittedTo(data.emailOrPhone);
+        setSubmitted(true);
+      } else {
+        setError(result.error || "Unable to send reset instructions.");
+      }
     } catch (error) {
       console.error("Error:", error);
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -63,6 +66,11 @@ export default function ForgotPasswordPage() {
 
           {!submitted ? (
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {error && (
+                <div className="rounded-[16px] border border-danger/20 bg-danger/10 p-4 text-sm font-semibold text-danger">
+                  {error}
+                </div>
+              )}
               <div className="rounded-[18px] border border-primary/10 bg-primary/5 p-4 text-sm leading-6 text-muted">
                 Enter the email or phone number associated with your account.
               </div>
@@ -90,17 +98,17 @@ export default function ForgotPasswordPage() {
             <div className="space-y-6">
               <div className="rounded-[20px] bg-success/10 border border-success/20 p-6 text-center">
                 <div className="text-4xl mb-4">✓</div>
-                <h2 className="font-semibold text-foreground mb-2">Check your {submittedTo.includes("@") ? "email" : "phone"}</h2>
+                <h2 className="font-semibold text-foreground mb-2">Check your email</h2>
                 <p className="text-sm text-muted">
-                  We've sent password reset instructions to <strong>{submittedTo}</strong>
+                  If an account matches <strong>{submittedTo}</strong>, password reset instructions have been sent.
                 </p>
               </div>
 
               <div className="space-y-3 p-4 rounded-[16px] bg-white/50 border border-border text-sm">
                 <p className="font-semibold text-foreground">Next steps:</p>
                 <ol className="space-y-2 text-muted">
-                  <li>1. Check your {submittedTo.includes("@") ? "email inbox" : "SMS messages"}</li>
-                  <li>2. Click the reset link or enter the code</li>
+                  <li>1. Check your email inbox and spam folder</li>
+                  <li>2. Click the reset link</li>
                   <li>3. Create a new password</li>
                   <li>4. Log in with your new password</li>
                 </ol>

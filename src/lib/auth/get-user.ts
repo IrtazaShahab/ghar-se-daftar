@@ -13,7 +13,7 @@ export async function getCurrentUser() {
       return null;
     }
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { id: data.user.id },
       include: {
         profile: true,
@@ -22,6 +22,20 @@ export async function getCurrentUser() {
         }
       }
     });
+
+    // Support profiles imported before Supabase Auth IDs were used as the
+    // Prisma primary key. Email is verified by the active Supabase session.
+    if (!user && data.user.email) {
+      user = await prisma.user.findUnique({
+        where: { email: data.user.email.toLowerCase() },
+        include: {
+          profile: true,
+          addresses: {
+            orderBy: { createdAt: "desc" }
+          }
+        }
+      });
+    }
 
     if (!user || user.status !== "ACTIVE") {
       return null;
