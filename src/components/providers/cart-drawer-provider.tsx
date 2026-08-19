@@ -1,25 +1,48 @@
 "use client";
 
-import { ReactNode, useState, createContext, useContext, useCallback } from "react";
+import { ReactNode, useState, createContext, useContext, useCallback, useEffect } from "react";
+
+export type NavbarOverlay = "cart" | "profile" | "mobile-menu" | null;
 
 type CartDrawerContextType = {
   isOpen: boolean;
+  activeOverlay: NavbarOverlay;
+  setActiveOverlay: (overlay: NavbarOverlay) => void;
   openCart: () => void;
   closeCart: () => void;
+  closeOverlay: () => void;
+  toggleOverlay: (overlay: Exclude<NavbarOverlay, null>) => void;
 };
 
 const CartDrawerContext = createContext<CartDrawerContextType | undefined>(undefined);
 
 export function CartDrawerProvider({ children }: { children: ReactNode }) {
-  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [activeOverlay, setActiveOverlay] = useState<NavbarOverlay>(null);
 
-  const openCart = useCallback(() => setIsCartOpen(true), []);
-  const closeCart = useCallback(() => setIsCartOpen(false), []);
+  const openCart = useCallback(() => setActiveOverlay("cart"), []);
+  const closeCart = useCallback(() => setActiveOverlay((current) => current === "cart" ? null : current), []);
+  const closeOverlay = useCallback(() => setActiveOverlay(null), []);
+  const toggleOverlay = useCallback((overlay: Exclude<NavbarOverlay, null>) => {
+    setActiveOverlay((current) => current === overlay ? null : overlay);
+  }, []);
+
+  useEffect(() => {
+    if (!activeOverlay) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setActiveOverlay(null);
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [activeOverlay]);
 
   const value: CartDrawerContextType = {
-    isOpen: isCartOpen,
+    isOpen: activeOverlay === "cart",
+    activeOverlay,
+    setActiveOverlay,
     openCart,
-    closeCart
+    closeCart,
+    closeOverlay,
+    toggleOverlay
   };
 
   return (

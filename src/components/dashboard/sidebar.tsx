@@ -12,8 +12,11 @@ import {
   UtensilsCrossed,
   ClipboardList,
   Grid3x3, User,
-  ChefHat
+  ChefHat,
+  LogOut
 } from "lucide-react";
+import { logout } from "@/app/actions/auth";
+import { useRouter } from "next/navigation";
 
 interface NavItem {
   label: string;
@@ -55,8 +58,9 @@ const navConfigs: Record<string, NavItem[]> = {
   ]
 };
 
-export function DashboardSidebar({ role }: { role: string }) {
+export function DashboardSidebar({ role, onNavigate }: { role: string; onNavigate?: () => void }) {
   const pathname = usePathname();
+  const router = useRouter();
   const navItems = navConfigs[role] || [];
 
   return (
@@ -71,12 +75,14 @@ export function DashboardSidebar({ role }: { role: string }) {
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-2">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+          const isActive = pathname === item.href ||
+            (item.href !== "/dashboard/customer" && pathname.startsWith(item.href + "/"));
 
           return (
             <Link
               key={item.href}
               href={item.href}
+              onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 px-4 py-3 rounded-[12px] font-semibold text-sm transition",
                 isActive
@@ -98,6 +104,7 @@ export function DashboardSidebar({ role }: { role: string }) {
 
       {/* Footer */}
       <div className="p-6 border-t border-border">
+        <button type="button" onClick={async () => { await logout(); router.replace("/"); router.refresh(); }} className="focus-ring mb-5 flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm font-bold text-danger hover:bg-danger/10"><LogOut className="size-4" />Logout</button>
         <div className="text-xs text-muted">
           <p>Ghar Se Daftar v1.0</p>
           <p>© 2024 All rights reserved</p>

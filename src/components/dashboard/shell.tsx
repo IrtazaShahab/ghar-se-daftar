@@ -37,7 +37,7 @@ export function DashboardShell({ children, role, userName, userEmail }: Dashboar
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
-        <DashboardSidebar role={role} />
+        <DashboardSidebar role={role} onNavigate={() => setSidebarOpen(false)} />
       </div>
 
       {/* Main content */}

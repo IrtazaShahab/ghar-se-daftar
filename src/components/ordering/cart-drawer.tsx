@@ -8,7 +8,7 @@ import { formatCurrencyPKR } from "@/lib/utils";
 import { generateCartInquiryMessage } from "@/lib/order";
 import { FoodImage } from "@/components/ui/food-image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export interface CartDrawerProps {
   isOpen: boolean;
@@ -57,22 +57,34 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
 
   const isEmpty = state.items.length === 0;
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", closeOnEscape);
+    return () => document.removeEventListener("keydown", closeOnEscape);
+  }, [isOpen, onClose]);
+
   return (
     <>
-      {isOpen && (
-        <>
           {/* Backdrop */}
           <div
             onClick={onClose}
-            className={`fixed inset-0 z-40 bg-black/30 lg:hidden transition-opacity duration-200 ${
-              isOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+            aria-hidden="true"
+            className={`fixed inset-0 z-40 bg-foreground/20 transition-opacity duration-200 motion-reduce:transition-none ${
+              isOpen ? "opacity-100" : "pointer-events-none opacity-0"
             }`}
           />
 
           {/* Drawer Container */}
           <div
-            className={`fixed right-0 top-0 z-50 h-screen w-full overflow-y-auto bg-background md:max-w-md lg:fixed lg:right-4 lg:top-20 lg:h-auto lg:w-96 lg:rounded-[28px] lg:border lg:border-border lg:shadow-xl transition-transform duration-300 transform ${
-              isOpen ? "translate-x-0" : "translate-x-full"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Shopping cart"
+            aria-hidden={!isOpen}
+            className={`fixed right-0 top-0 z-50 h-screen w-full overflow-y-auto bg-background md:max-w-md lg:right-4 lg:top-20 lg:h-[calc(100vh-6rem)] lg:w-96 lg:rounded-[28px] lg:border lg:border-border lg:shadow-xl transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none ${
+              isOpen ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-full opacity-0"
             }`}
           >
             {/* Header */}
@@ -98,13 +110,11 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   <div className="mb-4 rounded-full bg-primary/10 p-4">
                     <ShoppingBag className="size-8 text-primary" />
                   </div>
-                  <h3 className="font-serif text-2xl font-semibold text-center">Cart is empty</h3>
+                  <h3 className="font-serif text-2xl font-semibold text-center">Your cart is empty</h3>
                   <p className="mt-2 text-center text-muted max-w-xs">
-                    Browse our weekly menu and add your favorite meals.
+                    Looks like you haven&rsquo;t added anything yet.
                   </p>
-                  <Button onClick={onClose} variant="primary" className="mt-6">
-                    Continue Shopping
-                  </Button>
+                  <Link href="/menu" onClick={onClose} className="focus-ring mt-6 inline-flex h-[52px] items-center justify-center rounded-full bg-primary px-6 text-sm font-extrabold text-white shadow-lg shadow-primary/15 hover:bg-[#183f28]">Explore Meals</Link>
                 </div>
               ) : (
                 <>
@@ -233,8 +243,6 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               )}
             </div>
           </div>
-        </>
-      )}
     </>
   );
 }
