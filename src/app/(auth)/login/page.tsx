@@ -38,9 +38,11 @@ export default function LoginPage() {
       const result = await login(data);
 
       if (result.success) {
-        // Redirect based on role
-        const dashboardRoute = `/dashboard/${result.role === "ADMIN" ? "admin" : result.role === "CORPORATE_ADMIN" ? "corporate" : result.role === "HOME_CHEF" ? "chef" : "customer"}`;
-        router.push(dashboardRoute);
+        const destination = result.role === "CUSTOMER"
+          ? "/"
+          : `/dashboard/${result.role === "ADMIN" ? "admin" : result.role === "CORPORATE_ADMIN" ? "corporate" : "chef"}`;
+        router.replace(destination);
+        router.refresh();
       } else {
         setError(result.error || "Login failed");
       }

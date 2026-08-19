@@ -4,7 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { logout } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
-import { LogOut, User, ChevronDown } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { LogOut, User, ChevronDown, LayoutDashboard, ShoppingBag, UtensilsCrossed, Settings } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface DashboardTopbarProps {
   userName: string;
@@ -14,11 +17,13 @@ interface DashboardTopbarProps {
 
 export function DashboardTopbar({ userName, userEmail, role }: DashboardTopbarProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
-    router.push("/login");
+    router.replace("/");
+    router.refresh();
   };
 
   const roleDisplay = {
@@ -27,6 +32,13 @@ export function DashboardTopbar({ userName, userEmail, role }: DashboardTopbarPr
     CORPORATE_ADMIN: "Corporate Admin",
     HOME_CHEF: "Chef"
   }[role] || role;
+  const customerLinks = [
+    { label: "Dashboard", href: "/dashboard/customer", icon: LayoutDashboard },
+    { label: "Profile", href: "/dashboard/customer/profile", icon: User },
+    { label: "Orders", href: "/dashboard/customer/orders", icon: ShoppingBag },
+    { label: "Subscriptions", href: "/dashboard/customer/subscriptions", icon: UtensilsCrossed },
+    { label: "Settings", href: "/dashboard/customer/settings", icon: Settings }
+  ];
 
   return (
     <div className="flex items-center gap-6">
@@ -57,6 +69,18 @@ export function DashboardTopbar({ userName, userEmail, role }: DashboardTopbarPr
             </div>
 
             <div className="p-2">
+              {role === "CUSTOMER" && customerLinks.map(({ label, href, icon: Icon }) => (
+                <Link
+                  key={href}
+                  href={href}
+                  onClick={() => setMenuOpen(false)}
+                  className={cn("flex items-center gap-2 rounded-[12px] px-4 py-3 text-sm font-semibold transition", pathname === href ? "bg-primary text-white" : "text-foreground hover:bg-card")}
+                >
+                  <Icon className="size-4" />
+                  {label}
+                </Link>
+              ))}
+              {role === "CUSTOMER" && <div className="my-2 border-t border-border" />}
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center gap-2 px-4 py-3 rounded-[12px] text-sm font-semibold text-danger hover:bg-danger/5 transition"

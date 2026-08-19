@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/db/prisma";
 import { getCurrentUser as getAuthenticatedUser } from "@/lib/auth/get-user";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getAuthCallbackUrl } from "@/lib/app-url";
 import {
   forgotPasswordSchema,
   loginSchema,
@@ -76,6 +77,7 @@ export async function signup(input: SignupInput) {
       email,
       password: validatedData.password,
       options: {
+        emailRedirectTo: getAuthCallbackUrl("/dashboard/customer"),
         data: {
           full_name: validatedData.fullName,
           phone: validatedData.phone
@@ -281,12 +283,8 @@ export async function forgotPassword(input: ForgotPasswordInput) {
 
     if (email) {
       const supabase = await createSupabaseServerClient();
-      const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-      const redirectTo = new URL("/auth/callback", appUrl);
-      redirectTo.searchParams.set("next", "/reset-password");
-
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: redirectTo.toString()
+        redirectTo: getAuthCallbackUrl("/reset-password")
       });
 
       if (error) {

@@ -1,0 +1,29 @@
+# Local Supabase CLI email configuration. Hosted projects must be configured in
+# Authentication > Email Templates and Authentication > URL Configuration.
+[auth]
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+
+[auth.email.template.confirmation]
+subject = "Welcome to Ghar Se Daftar — confirm your email 👋"
+content_path = "./supabase/templates/confirmation.html"
+
+[auth.email.template.recovery]
+subject = "Reset your Ghar Se Daftar password 🍱"
+content_path = "./supabase/templates/recovery.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new Ghar Se Daftar email address"
+content_path = "./supabase/templates/email-change.html"
+
+[auth.email.template.invite]
+subject = "You're invited to Ghar Se Daftar"
+content_path = "./supabase/templates/invite.html"
+
+[auth.email.template.magic_link]
+subject = "Your Ghar Se Daftar sign-in link"
+content_path = "./supabase/templates/magic-link.html"
+
+[auth.email.template.reauthentication]
+subject = "Your Ghar Se Daftar verification code"
+content_path = "./supabase/templates/reauthentication.html"

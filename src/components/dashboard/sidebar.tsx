@@ -11,7 +11,7 @@ import {
   Users,
   UtensilsCrossed,
   ClipboardList,
-  Grid3x3,
+  Grid3x3, User,
   ChefHat
 } from "lucide-react";
 
@@ -25,6 +25,7 @@ interface NavItem {
 const navConfigs: Record<string, NavItem[]> = {
   CUSTOMER: [
     { label: "Dashboard", href: "/dashboard/customer", icon: <Grid3x3 className="size-5" /> },
+    { label: "Profile", href: "/dashboard/customer/profile", icon: <User className="size-5" /> },
     { label: "Orders", href: "/dashboard/customer/orders", icon: <ShoppingBag className="size-5" /> },
     { label: "Subscriptions", href: "/dashboard/customer/subscriptions", icon: <UtensilsCrossed className="size-5" /> },
     { label: "Settings", href: "/dashboard/customer/settings", icon: <Settings className="size-5" /> }

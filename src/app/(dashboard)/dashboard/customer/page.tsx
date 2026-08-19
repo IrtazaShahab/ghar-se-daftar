@@ -1,167 +1,41 @@
 import { getCurrentUser } from "@/lib/auth/get-user";
-import { redirect } from "next/navigation";
-import { DashboardShell } from "@/components/dashboard/shell";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { prisma } from "@/lib/db/prisma";
 import { Card } from "@/components/ui/card";
-import { UtensilsCrossed, Calendar, ShoppingBag, MapPin, Phone, Settings } from "lucide-react";
+import { ButtonLink } from "@/components/ui/button";
+import { CustomerPageHeader, EmptyState, StatusBadge, formatDate, formatMoney } from "@/components/dashboard/customer-ui";
+import { CalendarDays, ShoppingBag, UtensilsCrossed, Truck } from "lucide-react";
 
-export const metadata = {
-  title: "Customer Dashboard",
-  description: "Manage your office lunch orders and subscriptions"
-};
+export const metadata = { title: "Customer Dashboard" };
 
 export default async function CustomerDashboardPage() {
-  const user = await getCurrentUser();
+  const user = (await getCurrentUser())!;
+  const [orders, activeSubscription, totalOrders, activeOrders] = await Promise.all([
+    prisma.order.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 5, include: { items: { include: { menuOption: true } } } }),
+    prisma.subscription.findFirst({ where: { userId: user.id, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, include: { items: { where: { serviceDate: { gte: new Date() } }, orderBy: { serviceDate: "asc" }, take: 1, include: { menuOption: true } } } }),
+    prisma.order.count({ where: { userId: user.id } }),
+    prisma.order.count({ where: { userId: user.id, status: { notIn: ["DELIVERED", "CANCELLED"] } } })
+  ]);
+  const nextDelivery = orders.filter((order) => order.deliveryDate >= new Date() && order.status !== "CANCELLED").sort((a,b) => a.deliveryDate.getTime()-b.deliveryDate.getTime())[0];
+  const firstName = user.fullName.split(" ")[0];
 
-  if (!user) {
-    redirect("/login");
-  }
-
-  if (user.role !== "CUSTOMER") {
-    redirect("/unauthorized");
-  }
-
-  return (
-    <DashboardShell role={user.role} userName={user.fullName} userEmail={user.email || undefined}>
-      <div className="space-y-8">
-        {/* Welcome section */}
-        <div>
-          <h1 className="font-serif text-4xl font-semibold mb-2">Welcome back, {user.fullName}</h1>
-          <p className="text-muted">Track your office lunch orders and manage subscriptions</p>
-        </div>
-
-        {/* Stats grid */}
-        <div className="grid md:grid-cols-3 gap-6">
-          {/* Active subscription */}
-          <Card>
-            <div className="flex items-start justify-between mb-4">
-              <div className="w-10 h-10 rounded-[12px] bg-primary/10 flex items-center justify-center">
-                <UtensilsCrossed className="size-5 text-primary" />
-              </div>
-              <span className="text-xs font-semibold text-success bg-success/10 px-2 py-1 rounded-full">ACTIVE</span>
-            </div>
-            <p className="text-muted text-sm mb-1">Active Subscription</p>
-            <p className="font-serif text-2xl font-semibold">Weekly Plan</p>
-            <p className="text-xs text-muted mt-2">Renews on Jul 4, 2026</p>
-          </Card>
-
-          {/* Next meal */}
-          <Card>
-            <div className="flex items-start justify-between mb-4">
-              <div className="w-10 h-10 rounded-[12px] bg-primary/10 flex items-center justify-center">
-                <Calendar className="size-5 text-primary" />
-              </div>
-              <span className="text-xs font-semibold text-primary bg-primary/10 px-2 py-1 rounded-full">TODAY</span>
-            </div>
-            <p className="text-muted text-sm mb-1">Today's Meal</p>
-            <p className="font-serif text-lg font-semibold">Chicken Karahi</p>
-            <p className="text-xs text-muted mt-2">Delivered by 1:00 PM</p>
-          </Card>
-
-          {/* Recent orders */}
-          <Card>
-            <div className="flex items-start justify-between mb-4">
-              <div className="w-10 h-10 rounded-[12px] bg-primary/10 flex items-center justify-center">
-                <ShoppingBag className="size-5 text-primary" />
-              </div>
-            </div>
-            <p className="text-muted text-sm mb-1">Total Orders</p>
-            <p className="font-serif text-2xl font-semibold">12</p>
-            <p className="text-xs text-muted mt-2">This month</p>
-          </Card>
-        </div>
-
-        {/* Quick actions */}
-        <div className="grid md:grid-cols-2 gap-6">
-          {/* Delivery address */}
-          <Card>
-            <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
-              <MapPin className="size-5 text-primary" />
-              Delivery Address
-            </h2>
-
-            {user.profile?.officeAddress ? (
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-muted mb-1">Office</p>
-                  <p className="font-semibold">{user.profile.companyName || "Your Office"}</p>
-                  <p className="text-sm text-muted">{user.profile.deliveryArea}</p>
-                  <p className="text-sm text-muted mt-1">{user.profile.officeAddress}</p>
-                </div>
-                <ButtonLink href="/dashboard/customer/settings" variant="secondary" className="w-full">
-                  Update Address
-                </ButtonLink>
-              </div>
-            ) : (
-              <div className="py-8 text-center">
-                <p className="text-muted text-sm mb-4">No delivery address set</p>
-                <ButtonLink href="/dashboard/customer/settings" variant="primary" className="w-full">
-                  Add Address
-                </ButtonLink>
-              </div>
-            )}
-          </Card>
-
-          {/* Quick links */}
-          <Card>
-            <h2 className="font-semibold text-lg mb-4 flex items-center gap-2">
-              <ShoppingBag className="size-5 text-primary" />
-              Quick Actions
-            </h2>
-            <div className="space-y-3">
-              <ButtonLink href="/#menu" variant="secondary" className="w-full">
-                Order Now
-              </ButtonLink>
-              <ButtonLink href="/dashboard/customer/orders" variant="secondary" className="w-full">
-                View Orders
-              </ButtonLink>
-              <ButtonLink href="/dashboard/customer/subscriptions" variant="secondary" className="w-full">
-                Manage Plan
-              </ButtonLink>
-              <ButtonLink href="/dashboard/customer/settings" variant="secondary" className="w-full">
-                Settings
-              </ButtonLink>
-            </div>
-          </Card>
-        </div>
-
-        {/* Recent orders table */}
-        <Card>
-          <h2 className="font-semibold text-lg mb-4">Recent Orders</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-left py-3 px-4 font-semibold text-muted">Order ID</th>
-                  <th className="text-left py-3 px-4 font-semibold text-muted">Meals</th>
-                  <th className="text-left py-3 px-4 font-semibold text-muted">Amount</th>
-                  <th className="text-left py-3 px-4 font-semibold text-muted">Status</th>
-                  <th className="text-left py-3 px-4 font-semibold text-muted">Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  { id: "GSD-001", meals: "Chicken Karahi (2)", amount: "Rs.700", status: "DELIVERED", date: "Jun 26" },
-                  { id: "GSD-002", meals: "Beef Nihari (1)", amount: "Rs.350", status: "DELIVERED", date: "Jun 25" },
-                  { id: "GSD-003", meals: "Mix Vegetables (1)", amount: "Rs.350", status: "DELIVERED", date: "Jun 24" }
-                ].map((order) => (
-                  <tr key={order.id} className="border-b border-border hover:bg-white/50 transition">
-                    <td className="py-3 px-4 font-semibold">{order.id}</td>
-                    <td className="py-3 px-4 text-muted">{order.meals}</td>
-                    <td className="py-3 px-4 font-semibold">{order.amount}</td>
-                    <td className="py-3 px-4">
-                      <span className="text-xs font-semibold bg-success/10 text-success px-2 py-1 rounded-full">
-                        {order.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-muted">{order.date}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      </div>
-    </DashboardShell>
-  );
+  return <div className="space-y-8">
+    <CustomerPageHeader title={`Welcome back, ${firstName}`} description="A clear view of your meals, deliveries, and subscription activity." />
+    <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      {[
+        { label: "Active orders", value: String(activeOrders), Icon: ShoppingBag },
+        { label: "Current plan", value: activeSubscription ? activeSubscription.planType.replaceAll("_"," ") : "No plan", Icon: UtensilsCrossed },
+        { label: "Next delivery", value: nextDelivery ? formatDate(nextDelivery.deliveryDate) : "Not scheduled", Icon: Truck },
+        { label: "Total orders", value: String(totalOrders), Icon: CalendarDays }
+      ].map(({ label, value, Icon }) => <Card key={label} className="p-5"><Icon className="size-5 text-primary" /><p className="mt-5 text-sm text-muted">{label}</p><p className="mt-1 text-xl font-bold">{value}</p></Card>)}
+    </section>
+    <section className="grid gap-6 lg:grid-cols-[1.3fr_.7fr]">
+      <Card>
+        <div className="flex items-center justify-between"><h2 className="text-xl font-bold">Recent activity</h2><ButtonLink href="/dashboard/customer/orders" variant="ghost" className="h-10 px-3">View all</ButtonLink></div>
+        {orders.length ? <div className="mt-5 divide-y divide-border">{orders.map((order) => <div key={order.id} className="grid gap-2 py-4 sm:grid-cols-[1fr_auto] sm:items-center"><div><p className="font-bold">{order.items.map((item) => `${item.menuOption.name} × ${item.quantity}`).join(", ") || "Order"}</p><p className="mt-1 text-xs text-muted">{formatDate(order.createdAt)} · {formatMoney(order.totalAmount)}</p></div><StatusBadge status={order.status} /></div>)}</div> : <div className="py-10 text-center"><p className="font-bold">No activity yet</p><p className="mt-1 text-sm text-muted">Your orders will appear here.</p></div>}
+      </Card>
+      <Card><h2 className="text-xl font-bold">Current subscription</h2>{activeSubscription ? <div className="mt-5 space-y-3"><StatusBadge status={activeSubscription.status} /><p className="text-2xl font-bold capitalize">{activeSubscription.planType.toLowerCase()} plan</p><p className="text-sm text-muted">Started {formatDate(activeSubscription.startsOn)}</p><p className="text-sm text-muted">{activeSubscription.endsOn ? `Ends ${formatDate(activeSubscription.endsOn)}` : "No end date"}</p><p className="font-bold">{formatMoney(activeSubscription.price)}</p><ButtonLink href="/dashboard/customer/subscriptions" variant="secondary" className="mt-3 w-full">View subscription</ButtonLink></div> : <div className="mt-8"><p className="font-bold">No active subscription</p><p className="mt-2 text-sm text-muted">Choose a plan for a steadier office lunch routine.</p><ButtonLink href="/#plans" className="mt-5 w-full">Explore plans</ButtonLink></div>}</Card>
+    </section>
+    {!orders.length && !activeSubscription && <EmptyState icon={UtensilsCrossed} title="Ready for your first office lunch?" description="Browse this week’s homemade meals or choose a subscription plan." href="/menu" action="Browse meals" />}
+    <Card><h2 className="text-xl font-bold">Quick actions</h2><div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><ButtonLink href="/menu">Order now</ButtonLink><ButtonLink href="/dashboard/customer/orders" variant="secondary">View orders</ButtonLink><ButtonLink href="/dashboard/customer/subscriptions" variant="secondary">Subscriptions</ButtonLink><ButtonLink href="/dashboard/customer/profile" variant="secondary">Update profile</ButtonLink></div></Card>
+  </div>;
 }
