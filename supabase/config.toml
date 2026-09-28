@@ -2,14 +2,14 @@
 # Authentication > Email Templates and Authentication > URL Configuration.
 [auth]
 site_url = "http://localhost:3000"
-additional_redirect_urls = ["http://localhost:3000/auth/callback"]
+additional_redirect_urls = ["http://localhost:3000/auth/callback**"]
 
 [auth.email.template.confirmation]
-subject = "Welcome to Ghar Se Daftar — confirm your email 👋"
+subject = "Confirm your Ghar Se Daftar email"
 content_path = "./supabase/templates/confirmation.html"
 
 [auth.email.template.recovery]
-subject = "Reset your Ghar Se Daftar password 🍱"
+subject = "Reset your Ghar Se Daftar password"
 content_path = "./supabase/templates/recovery.html"
 
 [auth.email.template.email_change]
@@ -17,7 +17,7 @@ subject = "Confirm your new Ghar Se Daftar email address"
 content_path = "./supabase/templates/email-change.html"
 
 [auth.email.template.invite]
-subject = "You're invited to Ghar Se Daftar"
+subject = "You've been invited to Ghar Se Daftar"
 content_path = "./supabase/templates/invite.html"
 
 [auth.email.template.magic_link]
@@ -27,3 +27,14 @@ content_path = "./supabase/templates/magic-link.html"
 [auth.email.template.reauthentication]
 subject = "Your Ghar Se Daftar verification code"
 content_path = "./supabase/templates/reauthentication.html"
+
+# Security notifications (sent after the change has happened).
+[auth.email.notification.password_changed]
+enabled = true
+subject = "Your Ghar Se Daftar password was changed"
+content_path = "./supabase/templates/password-changed.html"
+
+[auth.email.notification.email_changed]
+enabled = true
+subject = "Your Ghar Se Daftar email address was changed"
+content_path = "./supabase/templates/email-changed.html"

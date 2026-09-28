@@ -1,1 +1,95 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>Invitation</title></head><body style="margin:0;background:#f5f1e8;font-family:Arial,Helvetica,sans-serif;color:#1f2933;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 12px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#fff;border:1px solid #e7e1d5;border-radius:16px;"><tr><td style="padding:32px;text-align:center;border-bottom:1px solid #eee8dc;"><img src="{{ .SiteURL }}/favicon.svg" width="56" height="56" alt="Ghar Se Daftar" style="display:block;margin:0 auto 12px;border:0;"><strong style="font-size:22px;color:#214f32;">Ghar Se Daftar</strong></td></tr><tr><td style="padding:34px 32px;"><h1 style="margin:0 0 16px;font-size:28px;color:#17251c;">You're invited</h1><p style="margin:0 0 24px;font-size:16px;line-height:1.65;color:#536057;">You've been invited to join Ghar Se Daftar. Accept the invitation to finish creating your account.</p><a href="{{ .SiteURL }}/auth/callback?next=/dashboard/customer&amp;token_hash={{ .TokenHash }}&amp;type=invite" style="display:inline-block;padding:14px 24px;border-radius:10px;background:#214f32;color:#fff;text-decoration:none;font-weight:700;">Accept Invitation</a><p style="margin:24px 0 6px;font-size:13px;color:#69766d;">If the button doesn't work, use this link:</p><p style="margin:0;word-break:break-all;font-size:12px;"><a href="{{ .SiteURL }}/auth/callback?next=/dashboard/customer&amp;token_hash={{ .TokenHash }}&amp;type=invite" style="color:#214f32;">{{ .SiteURL }}/auth/callback?next=/dashboard/customer&amp;token_hash={{ .TokenHash }}&amp;type=invite</a></p><p style="margin:26px 0 0;padding-top:20px;border-top:1px solid #eee8dc;font-size:13px;color:#69766d;">If you weren't expecting this invitation, you can safely ignore this email.</p></td></tr><tr><td style="padding:20px;text-align:center;background:#faf8f3;font-size:12px;color:#788178;">Sent securely by Ghar Se Daftar</td></tr></table></td></tr></table></body></html>
+<!doctype html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
+  <title>You've been invited to Ghar Se Daftar</title>
+  <style>
+    @media only screen and (max-width:620px){
+      .shell{width:100%!important}
+      .outer{padding:20px 12px!important}
+      .pad{padding-left:22px!important;padding-right:22px!important}
+      .btn{width:100%!important}
+      .btn-link{display:block!important;padding-left:12px!important;padding-right:12px!important}
+    }
+  </style>
+</head>
+<body style="margin:0;padding:0;background-color:#f6f0e4;-webkit-text-size-adjust:100%;">
+  {{ $link := printf "%s/auth/callback?next=/dashboard/customer&token_hash=%s&type=invite" .SiteURL .TokenHash }}<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">Accept your invitation to create a Ghar Se Daftar account.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f6f0e4" style="width:100%;background-color:#f6f0e4;">
+    <tr>
+      <td class="outer" align="center" style="padding:40px 12px;">
+        <table role="presentation" class="shell" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+          <tr>
+            <td style="background-color:#fffaf1;border:1px solid #e4d8c4;border-radius:16px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <!-- Brand -->
+                <tr>
+                  <td class="pad" style="padding:26px 40px 22px;border-bottom:1px solid #ece3d3;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="44" height="44" valign="middle" bgcolor="#214f32" style="width:44px;height:44px;border-radius:10px;background-color:#214f32;">
+                          <a href="{{ .SiteURL }}" target="_blank" style="text-decoration:none;"><img src="{{ .SiteURL }}/email/logo.png" width="44" height="44" alt="" style="display:block;width:44px;height:44px;border:0;border-radius:10px;outline:none;text-decoration:none;"></a>
+                        </td>
+                        <td valign="middle" style="padding-left:12px;">
+                          <a href="{{ .SiteURL }}" target="_blank" style="text-decoration:none;">
+                            <span style="display:block;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:17px;line-height:22px;font-weight:700;color:#214f32;">Ghar Se Daftar</span>
+                            <span style="display:block;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#966331;">Ghar Ka Khana, Ab Daftar Tak</span>
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <!-- Message -->
+                <tr>
+                  <td class="pad" style="padding:34px 40px 30px;">
+                    <h1 style="margin:0 0 16px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:22px;line-height:30px;font-weight:700;color:#18231b;">You&rsquo;ve been invited</h1>
+                    <p style="margin:0 0 14px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:24px;color:#3f4a42;">You&rsquo;ve been invited to create a Ghar Se Daftar account for <strong style="color:#18231b;">{{ .Email }}</strong>.</p>
+                    <p style="margin:0 0 14px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:24px;color:#3f4a42;">Accept the invitation below to set up your account.</p>
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="btn" style="margin:10px 0 0;">
+                <tr>
+                  <td class="btn-cell" align="center" bgcolor="#214f32" style="border-radius:10px;background-color:#214f32;">
+                    <a class="btn-link" href="{{ $link }}" target="_blank" style="display:inline-block;padding:14px 30px;border:1px solid #214f32;border-radius:10px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:20px;font-weight:700;color:#ffffff;text-decoration:none;">Accept Invitation</a>
+                  </td>
+                </tr>
+              </table>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 0;">
+                <tr>
+                  <td style="padding:16px;background-color:#f8f2e7;border:1px solid #ece3d3;border-radius:10px;">
+                    <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#687166;margin:0 0 6px;font-size:12px;line-height:18px;">If the button doesn&rsquo;t work, copy and paste this link into your browser:</p>
+                    <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;word-break:break-all;"><a href="{{ $link }}" target="_blank" style="color:#214f32;text-decoration:underline;">{{ $link }}</a></p>
+                  </td>
+                </tr>
+              </table>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 0;">
+                      <tr>
+                        <td style="padding-top:20px;border-top:1px solid #ece3d3;">
+                          <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#687166;margin:0 0 10px;">For your security, this link can only be used once and expires after a short time.</p>
+                          <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#687166;margin:0 0 10px;">If you weren&rsquo;t expecting this invitation, you can safely ignore this email.</p>
+                          <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#687166;">Need help? Contact us at <a href="mailto:gharsedaftar.support@gmail.com" style="color:#214f32;text-decoration:underline;">gharsedaftar.support@gmail.com</a></p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:24px 20px 0;">
+              <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;font-weight:700;color:#214f32;">Ghar Se Daftar</p>
+              <p style="margin:0 0 10px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#687166;">Fresh homemade meals, delivered to your office.</p>
+              <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;line-height:17px;color:#8b8f86;">You&rsquo;re receiving this because of activity on your Ghar Se Daftar account.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

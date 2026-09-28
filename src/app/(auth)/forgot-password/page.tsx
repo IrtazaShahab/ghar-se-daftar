@@ -1,139 +1,146 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { forgotPasswordSchema, type ForgotPasswordInput } from "@/lib/validations/auth";
-import { forgotPassword } from "@/app/actions/auth";
+import { forgotPassword, type ForgotPasswordResult } from "@/app/actions/auth";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LogoFull } from "@/components/brand/logo";
 import Link from "next/link";
-import { Mail, ArrowLeft, LifeBuoy } from "lucide-react";
+import { Mail, ArrowLeft, LifeBuoy, CheckCircle2, Clock3 } from "lucide-react";
+
+type Status =
+  | { kind: "idle" }
+  | { kind: "sent"; message: string }
+  | { kind: "error"; reason: Extract<ForgotPasswordResult, { success: false }>["reason"]; message: string };
+
+function useCooldown() {
+  const [secondsLeft, setSecondsLeft] = useState(0);
+
+  useEffect(() => {
+    if (secondsLeft <= 0) return;
+    const timer = window.setTimeout(() => setSecondsLeft((value) => value - 1), 1000);
+    return () => window.clearTimeout(timer);
+  }, [secondsLeft]);
+
+  return [secondsLeft, setSecondsLeft] as const;
+}
 
 export default function ForgotPasswordPage() {
-  const [submitted, setSubmitted] = useState(false);
-  const [submittedTo, setSubmittedTo] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [cooldown, setCooldown] = useCooldown();
 
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: { errors, isSubmitting }
   } = useForm<ForgotPasswordInput>({
     resolver: zodResolver(forgotPasswordSchema)
   });
 
   const onSubmit = async (data: ForgotPasswordInput) => {
-    setIsLoading(true);
-    setError(null);
+    if (cooldown > 0) return;
 
     try {
       const result = await forgotPassword(data);
       if (result.success) {
-        setSubmittedTo(data.emailOrPhone);
-        setSubmitted(true);
+        setStatus({ kind: "sent", message: result.message });
+        setCooldown(result.cooldownSeconds);
       } else {
-        setError(result.error || "Unable to send reset instructions.");
+        setStatus({ kind: "error", reason: result.reason, message: result.error });
+        if (result.retryAfterSeconds) setCooldown(result.retryAfterSeconds);
       }
-    } catch (error) {
-      console.error("Error:", error);
-      setError("An unexpected error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
+    } catch {
+      setStatus({
+        kind: "error",
+        reason: "network",
+        message: "We couldn't reach our servers. Check your connection and try again."
+      });
     }
   };
+
+  const isDisabled = isSubmitting || cooldown > 0;
+  const buttonLabel = isSubmitting
+    ? "Sending..."
+    : cooldown > 0
+      ? `Send again in ${cooldown}s`
+      : status.kind === "sent" ? "Resend Reset Instructions" : "Send Reset Instructions";
 
   return (
     <div className="auth-surface min-h-screen">
       <div className="flex min-h-screen items-center justify-center px-4 py-8">
         <div className="auth-panel w-full max-w-lg rounded-[28px] p-6 md:p-8">
-          {/* Back link */}
           <Link href="/login" className="mb-8 inline-flex items-center gap-2 rounded-full bg-primary/5 px-4 py-2 text-primary transition hover:bg-primary/10">
             <ArrowLeft className="size-4" />
             <span className="text-sm font-semibold">Back to login</span>
           </Link>
 
-          {/* Logo */}
-          <div className="text-center mb-12">
-            <Link href="/">
-              <LogoFull size="lg" className="justify-center mb-8" />
+          <div className="mb-10 text-center">
+            <Link href="/" aria-label="Ghar Se Daftar home">
+              <LogoFull size="lg" className="mb-8 justify-center" />
             </Link>
-            <h1 className="font-serif text-3xl font-semibold text-foreground">Reset Password</h1>
-            <p className="text-muted mt-2">We'll send you instructions to reset it</p>
+            <h1 className="font-serif text-3xl font-semibold text-foreground">Forgot Password</h1>
+            <p className="mt-2 text-muted">Enter your account email and we&apos;ll send you a link to reset your password.</p>
           </div>
 
-          {!submitted ? (
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-              {error && (
-                <div className="rounded-[16px] border border-danger/20 bg-danger/10 p-4 text-sm font-semibold text-danger">
-                  {error}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
+            <div aria-live="polite">
+              {status.kind === "sent" && (
+                <div className="flex gap-3 rounded-[18px] border border-success/20 bg-success/10 p-4 text-sm leading-6">
+                  <CheckCircle2 className="mt-0.5 size-5 flex-shrink-0 text-success" aria-hidden="true" />
+                  <div>
+                    <p className="font-semibold text-foreground">Check your inbox</p>
+                    <p className="text-muted">{status.message} The link expires after a short time, so use it soon.</p>
+                  </div>
                 </div>
               )}
-              <div className="rounded-[18px] border border-primary/10 bg-primary/5 p-4 text-sm leading-6 text-muted">
-                Enter the email or phone number associated with your account.
-              </div>
-
-              <Input
-                icon={Mail}
-                label="Email or Phone"
-                placeholder="user@example.com or +92 300 1234567"
-                {...register("emailOrPhone")}
-                error={errors.emailOrPhone?.message}
-                disabled={isLoading}
-                required
-              />
-
-              <Button
-                type="submit"
-                variant="primary"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? "Sending..." : "Send Reset Instructions"}
-              </Button>
-            </form>
-          ) : (
-            <div className="space-y-6">
-              <div className="rounded-[20px] bg-success/10 border border-success/20 p-6 text-center">
-                <div className="text-4xl mb-4">✓</div>
-                <h2 className="font-semibold text-foreground mb-2">Check your email</h2>
-                <p className="text-sm text-muted">
-                  If an account matches <strong>{submittedTo}</strong>, password reset instructions have been sent.
-                </p>
-              </div>
-
-              <div className="space-y-3 p-4 rounded-[16px] bg-white/50 border border-border text-sm">
-                <p className="font-semibold text-foreground">Next steps:</p>
-                <ol className="space-y-2 text-muted">
-                  <li>1. Check your email inbox and spam folder</li>
-                  <li>2. Click the reset link</li>
-                  <li>3. Create a new password</li>
-                  <li>4. Log in with your new password</li>
-                </ol>
-              </div>
-
-              <Button variant="secondary" className="w-full" onClick={() => setSubmitted(false)}>
-                Try Another Email/Phone
-              </Button>
-
-              <div className="text-center">
-                <Link href="/login" className="text-primary hover:opacity-75 transition font-semibold text-sm">
-                  Back to login
-                </Link>
-              </div>
+              {status.kind === "error" && (
+                <div
+                  role="alert"
+                  className={
+                    status.reason === "rate_limited"
+                      ? "flex gap-3 rounded-[18px] border border-accent/40 bg-accent/10 p-4 text-sm font-semibold leading-6 text-foreground"
+                      : "rounded-[16px] border border-danger/20 bg-danger/10 p-4 text-sm font-semibold text-danger"
+                  }
+                >
+                  {status.reason === "rate_limited" && <Clock3 className="mt-0.5 size-5 flex-shrink-0 text-primary" aria-hidden="true" />}
+                  <span>{status.message}</span>
+                </div>
+              )}
             </div>
-          )}
 
-          {/* Support message */}
+            <Input
+              icon={Mail}
+              label="Email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@company.com"
+              {...register("email")}
+              error={errors.email?.message}
+              disabled={isSubmitting}
+              required
+            />
+
+            <div className="space-y-2">
+              <Button type="submit" variant="primary" className="w-full" disabled={isDisabled} aria-disabled={isDisabled}>
+                {buttonLabel}
+              </Button>
+              {cooldown > 0 && (
+                <p className="text-center text-xs text-muted">You can request another email in {cooldown} seconds.</p>
+              )}
+            </div>
+          </form>
+
           <div className="mt-8 flex items-center gap-3 rounded-[18px] border border-primary/10 bg-card/75 p-4 text-sm text-muted">
-            <LifeBuoy className="size-5 flex-shrink-0 text-primary" />
+            <LifeBuoy className="size-5 flex-shrink-0 text-primary" aria-hidden="true" />
             <p>
-              Didn't receive the email? Check your spam folder or{" "}
-              <Link href="#" className="text-primary hover:opacity-75 transition font-semibold">
+              Didn&apos;t receive the email? Check your spam folder or{" "}
+              <a href="mailto:support@gharsedaftar.pk" className="font-semibold text-primary transition hover:opacity-75">
                 contact support
-              </Link>
+              </a>
+              .
             </p>
           </div>
         </div>

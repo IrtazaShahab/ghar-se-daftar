@@ -87,7 +87,7 @@ export default function LoginPage() {
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
             {error && (
               <div className="rounded-[16px] bg-danger/10 border border-danger/20 p-4 text-sm text-danger font-semibold">
                 {error}
@@ -96,10 +96,12 @@ export default function LoginPage() {
 
             <Input
               icon={Mail}
-              label="Email or Phone"
-              placeholder="user@example.com or +92 300 1234567"
-              {...register("emailOrPhone")}
-              error={errors.emailOrPhone?.message}
+              label="Email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@company.com"
+              {...register("email")}
+              error={errors.email?.message}
               disabled={isLoading}
               required
             />
@@ -108,6 +110,7 @@ export default function LoginPage() {
               icon={Lock}
               label="Password"
               type="password"
+              autoComplete="current-password"
               placeholder="Enter your password"
               {...register("password")}
               error={errors.password?.message}
@@ -138,7 +141,7 @@ export default function LoginPage() {
           {/* Forgot password link */}
           <div className="text-center mt-6">
             <Link href="/forgot-password" className="text-primary hover:opacity-75 transition font-semibold text-sm">
-              Forgot password?
+              Forgot Password?
             </Link>
           </div>
 

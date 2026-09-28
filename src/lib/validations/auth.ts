@@ -1,35 +1,36 @@
 import { z } from "zod";
 
-const phoneRegex = /^(\+92|0)[0-9]{10}$/;
-const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d@$!%*?&]{8,}$/;
+const emailField = z.string().trim().min(1, "Email is required").email("Enter a valid email address");
 
+const passwordField = z.string()
+  .min(8, "Password must be at least 8 characters")
+  .max(72, "Password must be 72 characters or fewer")
+  .regex(/[A-Z]/, "Password must contain an uppercase letter")
+  .regex(/[a-z]/, "Password must contain a lowercase letter")
+  .regex(/[0-9]/, "Password must contain a number");
+
+export const PASSWORD_HINT = "At least 8 characters with an uppercase letter, a lowercase letter and a number.";
+
+// Office, delivery and WhatsApp details are collected at checkout and in the
+// profile, so account creation only asks for what Supabase Auth needs.
 export const signupSchema = z.object({
-  fullName: z.string().min(2, "Full name is required").max(80),
-  email: z.string().email("Invalid email address"),
-  phone: z.string().regex(phoneRegex, "Invalid Pakistani phone number. Use +92 or 0 format."),
-  whatsappNumber: z.string().regex(phoneRegex, "Invalid Pakistani WhatsApp number. Use +92 or 0 format."),
-  password: z.string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain an uppercase letter")
-    .regex(/[a-z]/, "Password must contain a lowercase letter")
-    .regex(/[0-9]/, "Password must contain a number"),
-  confirmPassword: z.string(),
-  companyName: z.string().min(2).max(120).optional().or(z.literal("")),
-  deliveryArea: z.string().min(2).max(120).optional().or(z.literal("")),
-  officeAddress: z.string().min(5).max(500).optional().or(z.literal(""))
+  fullName: z.string().trim().min(2, "Full name is required").max(80),
+  email: emailField,
+  password: passwordField,
+  confirmPassword: z.string().min(1, "Please confirm your password")
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"]
 });
 
 export const loginSchema = z.object({
-  emailOrPhone: z.string().min(1, "Email or phone number is required"),
+  email: emailField,
   password: z.string().min(1, "Password is required"),
   rememberMe: z.boolean().optional().default(false)
 });
 
 export const forgotPasswordSchema = z.object({
-  emailOrPhone: z.string().min(1, "Email or phone number is required")
+  email: emailField
 });
 
 export const verifyOtpSchema = z.object({
@@ -37,12 +38,8 @@ export const verifyOtpSchema = z.object({
 });
 
 export const resetPasswordSchema = z.object({
-  password: z.string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain an uppercase letter")
-    .regex(/[a-z]/, "Password must contain a lowercase letter")
-    .regex(/[0-9]/, "Password must contain a number"),
-  confirmPassword: z.string()
+  password: passwordField,
+  confirmPassword: z.string().min(1, "Please confirm your new password")
 }).refine(data => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"]

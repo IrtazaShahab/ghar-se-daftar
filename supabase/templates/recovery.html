@@ -1,35 +1,95 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="x-apple-disable-message-reformatting">
+  <meta name="color-scheme" content="light">
+  <meta name="supported-color-schemes" content="light">
   <title>Reset your Ghar Se Daftar password</title>
   <style>
-    @media only screen and (max-width:620px){.shell{width:100%!important}.outer{padding:16px 8px!important}.pad{padding-left:22px!important;padding-right:22px!important}.heading{font-size:26px!important}.button{display:block!important;text-align:center!important}}
+    @media only screen and (max-width:620px){
+      .shell{width:100%!important}
+      .outer{padding:20px 12px!important}
+      .pad{padding-left:22px!important;padding-right:22px!important}
+      .btn{width:100%!important}
+      .btn-link{display:block!important;padding-left:12px!important;padding-right:12px!important}
+    }
   </style>
 </head>
-<body style="margin:0;padding:0;background-color:#f6f0e4;color:#18231b;font-family:Arial,Helvetica,sans-serif;-webkit-text-size-adjust:100%;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Choose a new password for your Ghar Se Daftar account.</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width:100%;background-color:#f6f0e4;"><tr><td class="outer" align="center" style="padding:36px 12px;">
-    <table role="presentation" class="shell" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;background-color:#fffaf1;border:1px solid #e4d8c4;border-radius:18px;overflow:hidden;">
-      <tr><td align="center" style="padding:28px 24px 24px;background-color:#214f32;">
-        <a href="{{ .SiteURL }}" style="text-decoration:none;color:#ffffff;" aria-label="Visit Ghar Se Daftar"><img src="{{ .SiteURL }}/favicon.svg" width="58" height="58" alt="" style="display:block;width:58px;height:58px;margin:0 auto 11px;border:0;"><span style="display:block;font-size:23px;line-height:28px;font-weight:700;color:#ffffff;">Ghar Se Daftar</span><span style="display:block;margin-top:5px;font-size:12px;line-height:18px;color:#f2ddb8;">Ghar Ka Khana, Ab Daftar Tak</span></a>
-      </td></tr>
-      <tr><td class="pad" style="padding:38px 42px 34px;background-color:#fffaf1;">
-        <p style="margin:0 0 11px;font-size:14px;line-height:21px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#966331;">Account security</p>
-        <h1 class="heading" style="margin:0 0 17px;font-size:31px;line-height:39px;color:#18231b;">Let&rsquo;s get you back in</h1>
-        <p style="margin:0 0 13px;font-size:16px;line-height:26px;color:#536057;">Hi there,</p>
-        <p style="margin:0 0 26px;font-size:16px;line-height:26px;color:#536057;">We received a request to reset the password for your Ghar Se Daftar account. Choose a new password using the secure button below.</p>
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td bgcolor="#214f32" style="border-radius:10px;"><a class="button" href="{{ .RedirectTo }}&amp;token_hash={{ .TokenHash }}&amp;type=recovery" style="display:inline-block;padding:15px 27px;border:1px solid #214f32;border-radius:10px;color:#ffffff;text-decoration:none;font-size:16px;line-height:20px;font-weight:700;">Reset My Password</a></td></tr></table>
-        <p style="margin:24px 0 0;font-size:13px;line-height:21px;color:#687166;">For your security, this link is single-use and expires according to your project&rsquo;s Supabase Auth settings.</p>
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;"><tr><td style="padding:16px 18px;border-left:4px solid #d9a85f;background-color:#f8f0e2;"><p style="margin:0;font-size:13px;line-height:21px;color:#5d604f;"><strong style="color:#18231b;">Didn&rsquo;t request this?</strong><br>You can safely ignore this email. Your password will remain unchanged. Never forward this email or share its link.</p></td></tr></table>
-        <p style="margin:24px 0 7px;font-size:12px;line-height:18px;color:#687166;">Button not working? Copy and paste this address into your browser:</p>
-        <p style="margin:0;word-break:break-all;font-size:11px;line-height:18px;"><a href="{{ .RedirectTo }}&amp;token_hash={{ .TokenHash }}&amp;type=recovery" style="color:#214f32;text-decoration:underline;">{{ .RedirectTo }}&amp;token_hash={{ .TokenHash }}&amp;type=recovery</a></p>
-      </td></tr>
-      <tr><td class="pad" style="padding:30px 42px;background-color:#edf2ea;border-top:1px solid #dce6d8;"><p style="margin:0 0 7px;font-size:20px;line-height:27px;font-weight:700;color:#214f32;">Good food. Made at home.</p><p style="margin:0 0 20px;font-size:14px;line-height:23px;color:#536057;">Fresh, homemade meals from local home chefs, delivered conveniently to your workplace.</p><a href="{{ .SiteURL }}/menu" style="display:inline-block;padding:11px 18px;border:1px solid #214f32;border-radius:8px;color:#214f32;text-decoration:none;font-size:14px;line-height:18px;font-weight:700;">Explore Today&rsquo;s Menu</a></td></tr>
-      <tr><td class="pad" align="center" style="padding:26px 42px;background-color:#18231b;"><p style="margin:0 0 6px;font-size:15px;line-height:22px;font-weight:700;color:#ffffff;">Ghar Se Daftar</p><p style="margin:0 0 14px;font-size:12px;line-height:19px;color:#cbd4cd;">Fresh homemade meals, delivered to your workplace.</p><p style="margin:0;font-size:12px;line-height:20px;"><a href="{{ .SiteURL }}" style="color:#f2ddb8;text-decoration:underline;">Website</a><span style="color:#718078;"> &nbsp;&bull;&nbsp; </span><a href="{{ .SiteURL }}/menu" style="color:#f2ddb8;text-decoration:underline;">Menu</a><span style="color:#718078;"> &nbsp;&bull;&nbsp; </span><a href="mailto:support@gharsedaftar.pk" style="color:#f2ddb8;text-decoration:underline;">Support</a></p></td></tr>
-    </table>
-  </td></tr></table>
+<body style="margin:0;padding:0;background-color:#f6f0e4;-webkit-text-size-adjust:100%;">
+  {{ $link := printf "%s&token_hash=%s&type=recovery" .RedirectTo .TokenHash }}{{ if eq .RedirectTo .SiteURL }}{{ $link = printf "%s/auth/callback?token_hash=%s&type=recovery" .SiteURL .TokenHash }}{{ end }}<div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">Use the link inside to choose a new password for your Ghar Se Daftar account.</div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#f6f0e4" style="width:100%;background-color:#f6f0e4;">
+    <tr>
+      <td class="outer" align="center" style="padding:40px 12px;">
+        <table role="presentation" class="shell" width="600" cellpadding="0" cellspacing="0" border="0" style="width:600px;max-width:600px;">
+          <tr>
+            <td style="background-color:#fffaf1;border:1px solid #e4d8c4;border-radius:16px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <!-- Brand -->
+                <tr>
+                  <td class="pad" style="padding:26px 40px 22px;border-bottom:1px solid #ece3d3;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td width="44" height="44" valign="middle" bgcolor="#214f32" style="width:44px;height:44px;border-radius:10px;background-color:#214f32;">
+                          <a href="{{ .SiteURL }}" target="_blank" style="text-decoration:none;"><img src="{{ .SiteURL }}/email/logo.png" width="44" height="44" alt="" style="display:block;width:44px;height:44px;border:0;border-radius:10px;outline:none;text-decoration:none;"></a>
+                        </td>
+                        <td valign="middle" style="padding-left:12px;">
+                          <a href="{{ .SiteURL }}" target="_blank" style="text-decoration:none;">
+                            <span style="display:block;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:17px;line-height:22px;font-weight:700;color:#214f32;">Ghar Se Daftar</span>
+                            <span style="display:block;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#966331;">Ghar Ka Khana, Ab Daftar Tak</span>
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+                <!-- Message -->
+                <tr>
+                  <td class="pad" style="padding:34px 40px 30px;">
+                    <h1 style="margin:0 0 16px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:22px;line-height:30px;font-weight:700;color:#18231b;">Reset your password</h1>
+                    <p style="margin:0 0 14px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:24px;color:#3f4a42;">We received a request to reset the password for the Ghar Se Daftar account linked to <strong style="color:#18231b;">{{ .Email }}</strong>.</p>
+                    <p style="margin:0 0 14px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:24px;color:#3f4a42;">Use the button below to choose a new password.</p>
+                    <table role="presentation" cellpadding="0" cellspacing="0" border="0" class="btn" style="margin:10px 0 0;">
+                <tr>
+                  <td class="btn-cell" align="center" bgcolor="#214f32" style="border-radius:10px;background-color:#214f32;">
+                    <a class="btn-link" href="{{ $link }}" target="_blank" style="display:inline-block;padding:14px 30px;border:1px solid #214f32;border-radius:10px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;line-height:20px;font-weight:700;color:#ffffff;text-decoration:none;">Reset Password</a>
+                  </td>
+                </tr>
+              </table>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 0;">
+                <tr>
+                  <td style="padding:16px;background-color:#f8f2e7;border:1px solid #ece3d3;border-radius:10px;">
+                    <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#687166;margin:0 0 6px;font-size:12px;line-height:18px;">If the button doesn&rsquo;t work, copy and paste this link into your browser:</p>
+                    <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;word-break:break-all;"><a href="{{ $link }}" target="_blank" style="color:#214f32;text-decoration:underline;">{{ $link }}</a></p>
+                  </td>
+                </tr>
+              </table>
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:28px 0 0;">
+                      <tr>
+                        <td style="padding-top:20px;border-top:1px solid #ece3d3;">
+                          <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#687166;margin:0 0 10px;">For security, this link should only be used by the person who requested the password change. It can only be used once and expires after a short time.</p>
+                          <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#687166;margin:0 0 10px;">If you didn&rsquo;t request this, you can safely ignore this email. Your password won&rsquo;t change.</p>
+                          <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;color:#687166;">Need help? Contact us at <a href="mailto:gharsedaftar.support@gmail.com" style="color:#214f32;text-decoration:underline;">gharsedaftar.support@gmail.com</a></p>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:24px 20px 0;">
+              <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:13px;line-height:20px;font-weight:700;color:#214f32;">Ghar Se Daftar</p>
+              <p style="margin:0 0 10px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:18px;color:#687166;">Fresh homemade meals, delivered to your office.</p>
+              <p style="margin:0;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:11px;line-height:17px;color:#8b8f86;">You&rsquo;re receiving this because of activity on your Ghar Se Daftar account.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>
