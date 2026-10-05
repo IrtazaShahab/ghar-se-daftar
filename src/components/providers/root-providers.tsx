@@ -16,6 +16,8 @@ export function RootProviders({ children }: { children: ReactNode }) {
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/reset-password") ||
     pathname.startsWith("/dashboard") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/chef") ||
     pathname.startsWith("/unauthorized");
 
   if (lightweightRoute) {

@@ -1,4 +1,5 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { prisma } from "@/lib/db/prisma";
 import { sanitizeRedirectPath } from "@/lib/app-url";
 import { RECOVERY_COOKIE, RESET_PASSWORD_PATH, recoveryCookieOptions } from "@/lib/auth/recovery";
 import type { EmailOtpType } from "@supabase/supabase-js";
@@ -6,13 +7,21 @@ import { NextResponse } from "next/server";
 
 const EMAIL_OTP_TYPES = new Set<EmailOtpType>([
   "email",
+  "signup",
   "recovery",
   "invite",
   "magiclink",
   "email_change"
 ]);
 
-const DEFAULT_NEXT = "/dashboard/customer";
+const DEFAULT_NEXT = "/";
+
+/**
+ * New accounts (signup confirmation, invite) always land on the homepage with
+ * their session active, including links from emails sent before this rule,
+ * which carried next=/dashboard/customer.
+ */
+const NEW_ACCOUNT_TYPES = new Set<EmailOtpType>(["email", "signup", "invite"]);
 
 /**
  * Verifies Supabase email links server-side and stores the session in cookies.
@@ -63,7 +72,15 @@ export async function GET(request: Request) {
   }
 
   if (user) {
-    return NextResponse.redirect(new URL(next, url.origin));
+    const isNewAccount = type !== null && NEW_ACCOUNT_TYPES.has(type);
+    if (isNewAccount) {
+      // Record verification on the app profile. (A one-time welcome email would hook in here.)
+      await prisma.user
+        .updateMany({ where: { id: user.id, emailVerified: null }, data: { emailVerified: new Date(user.email_confirmed_at ?? Date.now()) } })
+        .catch((error: unknown) => console.error("Email verification sync failed:", error instanceof Error ? error.message : error));
+    }
+    const destination = isNewAccount ? "/" : next;
+    return NextResponse.redirect(new URL(destination, url.origin));
   }
 
   return NextResponse.redirect(new URL("/login?error=invalid_or_expired_confirmation", url.origin));

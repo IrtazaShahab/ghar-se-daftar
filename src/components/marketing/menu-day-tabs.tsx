@@ -41,7 +41,7 @@ function MenuDayTabsComponent() {
     dispatch({
       type: "ADD_ITEM",
       payload: {
-        menuOptionId: `${day.day}-${optionIndex === 0 ? "A" : "B"}`,
+        menuOptionId: option.id,
         day: day.day,
         name: option.name,
         items: option.items,

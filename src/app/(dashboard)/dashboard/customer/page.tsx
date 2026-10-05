@@ -4,13 +4,15 @@ import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 import { CustomerPageHeader, EmptyState, StatusBadge, formatDate, formatMoney } from "@/components/dashboard/customer-ui";
 import { CalendarDays, ShoppingBag, UtensilsCrossed, Truck } from "lucide-react";
+import { OrderStatusBadge } from "@/components/orders/status-badges";
+import Link from "next/link";
 
 export const metadata = { title: "Customer Dashboard" };
 
 export default async function CustomerDashboardPage() {
   const user = (await getCurrentUser())!;
   const [orders, activeSubscription, totalOrders, activeOrders] = await Promise.all([
-    prisma.order.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 5, include: { items: { include: { menuOption: true } } } }),
+    prisma.order.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 5, include: { items: true } }),
     prisma.subscription.findFirst({ where: { userId: user.id, status: "ACTIVE" }, orderBy: { createdAt: "desc" }, include: { items: { where: { serviceDate: { gte: new Date() } }, orderBy: { serviceDate: "asc" }, take: 1, include: { menuOption: true } } } }),
     prisma.order.count({ where: { userId: user.id } }),
     prisma.order.count({ where: { userId: user.id, status: { notIn: ["DELIVERED", "CANCELLED"] } } })
@@ -31,7 +33,7 @@ export default async function CustomerDashboardPage() {
     <section className="grid gap-6 lg:grid-cols-[1.3fr_.7fr]">
       <Card>
         <div className="flex items-center justify-between"><h2 className="text-xl font-bold">Recent activity</h2><ButtonLink href="/dashboard/customer/orders" variant="ghost" className="h-10 px-3">View all</ButtonLink></div>
-        {orders.length ? <div className="mt-5 divide-y divide-border">{orders.map((order) => <div key={order.id} className="grid gap-2 py-4 sm:grid-cols-[1fr_auto] sm:items-center"><div><p className="font-bold">{order.items.map((item) => `${item.menuOption.name} × ${item.quantity}`).join(", ") || "Order"}</p><p className="mt-1 text-xs text-muted">{formatDate(order.createdAt)} · {formatMoney(order.totalAmount)}</p></div><StatusBadge status={order.status} /></div>)}</div> : <div className="py-10 text-center"><p className="font-bold">No activity yet</p><p className="mt-1 text-sm text-muted">Your orders will appear here.</p></div>}
+        {orders.length ? <div className="mt-5 divide-y divide-border">{orders.map((order) => <div key={order.id} className="grid gap-2 py-4 sm:grid-cols-[1fr_auto] sm:items-center"><div><Link href={`/orders/${order.orderNumber}`} className="font-bold hover:text-primary">{order.orderNumber} · {order.items.map((item) => `${item.itemName} × ${item.quantity}`).join(", ") || "Order"}</Link><p className="mt-1 text-xs text-muted">{formatDate(order.createdAt)} · {formatMoney(order.totalAmount)}</p></div><OrderStatusBadge status={order.status} /></div>)}</div> : <div className="py-10 text-center"><p className="font-bold">No activity yet</p><p className="mt-1 text-sm text-muted">Your orders will appear here.</p></div>}
       </Card>
       <Card><h2 className="text-xl font-bold">Current subscription</h2>{activeSubscription ? <div className="mt-5 space-y-3"><StatusBadge status={activeSubscription.status} /><p className="text-2xl font-bold capitalize">{activeSubscription.planType.toLowerCase()} plan</p><p className="text-sm text-muted">Started {formatDate(activeSubscription.startsOn)}</p><p className="text-sm text-muted">{activeSubscription.endsOn ? `Ends ${formatDate(activeSubscription.endsOn)}` : "No end date"}</p><p className="font-bold">{formatMoney(activeSubscription.price)}</p><ButtonLink href="/dashboard/customer/subscriptions" variant="secondary" className="mt-3 w-full">View subscription</ButtonLink></div> : <div className="mt-8"><p className="font-bold">No active subscription</p><p className="mt-2 text-sm text-muted">Choose a plan for a steadier office lunch routine.</p><ButtonLink href="/#plans" className="mt-5 w-full">Explore plans</ButtonLink></div>}</Card>
     </section>

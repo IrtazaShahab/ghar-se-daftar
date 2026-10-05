@@ -15,14 +15,14 @@ in `NEXT_PUBLIC_*` variables.
 
 ## Templates
 
-| Dashboard template | File | Subject | Used by the app |
-| --- | --- | --- | --- |
-| Confirm signup | `confirmation.html` | Confirm your Ghar Se Daftar email | Yes: `/signup` |
-| Reset password | `recovery.html` | Reset your Ghar Se Daftar password | Yes: `/forgot-password` |
-| Change email address | `email-change.html` | Confirm your new Ghar Se Daftar email address | No UI yet (Dashboard/API only) |
-| Invite user | `invite.html` | You've been invited to Ghar Se Daftar | Only via Dashboard "Invite user" |
-| Password changed (security notification) | `password-changed.html` | Your Ghar Se Daftar password was changed | Yes: after a password reset |
-| Email address changed (security notification) | `email-changed.html` | Your Ghar Se Daftar email address was changed | After any email change |
+| Dashboard template                            | File                    | Subject                                       | Used by the app                  |
+| --------------------------------------------- | ----------------------- | --------------------------------------------- | -------------------------------- |
+| Confirm signup                                | `confirmation.html`     | Confirm your Ghar Se Daftar email             | Yes: `/signup`                   |
+| Reset password                                | `recovery.html`         | Reset your Ghar Se Daftar password            | Yes: `/forgot-password`          |
+| Change email address                          | `email-change.html`     | Confirm your new Ghar Se Daftar email address | No UI yet (Dashboard/API only)   |
+| Invite user                                   | `invite.html`           | You've been invited to Ghar Se Daftar         | Only via Dashboard "Invite user" |
+| Password changed (security notification)      | `password-changed.html` | Your Ghar Se Daftar password was changed      | Yes: after a password reset      |
+| Email address changed (security notification) | `email-changed.html`    | Your Ghar Se Daftar email address was changed | After any email change           |
 
 `magic-link.html` and `reauthentication.html` are kept from earlier work but are
 not used: the app never calls `signInWithOtp` or `reauthenticate`. They were
@@ -49,7 +49,11 @@ missing, the green logo tile and brand text still render.
 `<NEXT_PUBLIC_APP_URL>/auth/callback?next=%2Freset-password`. The template adds
 `&token_hash={{ .TokenHash }}&type=recovery` (or `type=email` for signup). This
 makes the email environment-aware: a reset requested from localhost opens
-localhost, and one requested in production opens production.
+localhost, and one requested in production opens production. In development the
+link uses the origin you are actually browsing (e.g. `http://localhost:3100`),
+even if `NEXT_PUBLIC_APP_URL` names another port; production always uses
+`NEXT_PUBLIC_APP_URL`/the Vercel URL. After a successful reset the server signs
+the recovery session out and redirects to `/login?reset=success`.
 
 If Supabase rejects the redirect (it is not on the allow-list), it falls back to
 the Site URL. The templates detect this (`eq .RedirectTo .SiteURL`) and build
@@ -57,7 +61,14 @@ the Site URL. The templates detect this (`eq .RedirectTo .SiteURL`) and build
 still works.
 
 **Change email and Invite** are not triggered with an app redirect, so they
-always link to `{{ .SiteURL }}/auth/callback?next=/dashboard/customer&token_hash=...`.
+link to `{{ .SiteURL }}/auth/callback?next=...&token_hash=...` (`/dashboard/customer`
+for email change, `/` for invites).
+
+**Where people land.** New accounts (signup confirmation `type=email`/`signup`,
+and `type=invite`) always land on the homepage `/` with their session active,
+even for older emails whose link still says `next=/dashboard/customer`. This is
+enforced in `/auth/callback`, not in the browser. Password recovery is unchanged
+(`/reset-password`). Normal logins never send an email.
 
 `/auth/callback` (`src/app/auth/callback/route.ts`) verifies the token with
 `verifyOtp({ token_hash, type })` on the server. This works on any device,
@@ -71,7 +82,7 @@ token from the address bar.
    - Site URL: `https://ghar-se-daftar.vercel.app` (never localhost)
    - Redirect URLs:
      - `https://ghar-se-daftar.vercel.app/auth/callback**`
-     - `http://localhost:3000/auth/callback**`
+     - `http://localhost:3100/auth/callback**`
 2. **Authentication → Emails → Templates**: for each template in the table,
    set the subject and paste the full contents of the file into the message
    body (source view).
@@ -111,15 +122,16 @@ email addresses are redacted.
 Links are single-use and expire, so request a fresh email for every test.
 
 - **Confirm signup**: sign up at `/signup` with a new inbox. Check the From
-  name, logo, subject and button. The link should land on `/dashboard/customer`.
+  name, logo, subject and button. The link should land on the homepage `/`,
+  signed in (the account menu appears in the nav).
   Clicking it a second time should land on `/login?error=invalid_or_expired_confirmation`.
 - **Forgot password**: submit `/forgot-password`, then click **Reset Password**.
   You should land on `/reset-password` with the form, set a new password, then
   log in with it. The "password changed" notice should arrive if it is enabled.
   Reusing the link shows the invalid-link state.
 - **Locally**: run with `.env.local` as above. The email's link should start with
-  `http://localhost:3000/auth/callback`. If it starts with the production URL
-  instead, `http://localhost:3000/auth/callback**` is missing from the
+  `http://localhost:3100/auth/callback`. If it starts with the production URL
+  instead, `http://localhost:3100/auth/callback**` is missing from the
   Redirect URLs.
 - **Production**: repeat on `https://ghar-se-daftar.vercel.app`. The link should
   start with the production origin.
@@ -128,8 +140,9 @@ Links are single-use and expire, so request a fresh email for every test.
 ## Adding a welcome email later
 
 A welcome email is an application email, not an auth email, so Supabase SMTP
-templates cannot send it. The simplest route is to send it from `/auth/callback`
-after a successful `type=email` verification, using a provider API such as
-Resend or Postmark (server-only API key). Record a `welcomeEmailSentAt` column
-on the user so it is sent once. A Supabase Database Webhook or Auth Hook calling
+templates cannot send it. `/auth/callback` already marks the hook point (it
+records `emailVerified` after a signup confirmation). Send it there with
+`sendNotificationEmail()` from `src/lib/notifications/service.ts`, using a
+`dedupeKey` such as `user:<id>:welcome` so it is sent once. App email uses the
+`EMAIL_PROVIDER` settings described in `docs/ORDER_PLATFORM.md`. A Supabase Database Webhook or Auth Hook calling
 an Edge Function also works if you want it outside the Next.js app.

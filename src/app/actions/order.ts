@@ -1,127 +1,65 @@
 "use server";
 
-import { CartItem } from "@/store/cart";
-import { CheckoutFormData } from "@/lib/order";
 import { getCurrentUser } from "@/lib/auth/get-user";
+import { priceCart, type PricedLine } from "@/lib/orders/cart";
+import { createOrder, type PlaceOrderResult } from "@/lib/orders/create-order";
+import type { OrderTotals } from "@/lib/orders/pricing";
+import { getPaymentMethodOptions, type PaymentMethodOption } from "@/lib/payments/policy";
+import { devRateLimit } from "@/lib/security/rate-limit";
+import { cartLinesSchema, placeOrderSchema, type CartLineInput, type PlaceOrderInput } from "@/lib/validations/checkout";
 
-interface OrderPayload {
-  customer: CheckoutFormData;
-  items: CartItem[];
-  plan: string;
-  subtotal: number;
-  deliveryFee: number;
-  total: number;
-}
+export type CheckoutQuote =
+  | {
+      success: true;
+      lines: PricedLine[];
+      unavailableIds: string[];
+      totals: OrderTotals;
+      paymentOptions: PaymentMethodOption[];
+    }
+  | { success: false; error: string };
 
 /**
- * Submit order from checkout
- *
- * TODO: When Prisma is fully connected:
- * - Create Order in database with status PENDING_CONFIRMATION
- * - Create OrderItems for each cart item
- * - Create Payment record with status PENDING
- * - Send order confirmation via WhatsApp/email
- * - Log to AuditLog
- *
- * For now: Generate order reference and return success
+ * Server-priced summary for the checkout page. Display only: placeOrder
+ * recalculates everything again when the order is submitted.
  */
-export async function submitOrder(payload: OrderPayload) {
+export async function getCheckoutQuote(items: CartLineInput[]): Promise<CheckoutQuote> {
+  const parsed = cartLinesSchema.safeParse(items);
+  if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Your cart couldn't be read." };
+
   try {
-    const user = await getCurrentUser();
-
-    if (!user) {
-      return {
-        success: false,
-        error: "Please log in before placing an order."
-      };
-    }
-
-    // Validate input
-    if (!payload.customer || !payload.items || payload.items.length === 0) {
-      return {
-        success: false,
-        error: "Invalid order data"
-      };
-    }
-
-    // Generate order reference
-    const orderId = `GSD-${Date.now()}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-
-    // TODO: Save to database
-    // const order = await prisma.order.create({
-    //   data: {
-    //     status: "PENDING_CONFIRMATION",
-    //     deliveryDate: new Date(),
-    //     totalAmount: payload.total,
-    //     items: {
-    //       create: payload.items.map(item => ({
-    //         menuOptionId: item.menuOptionId,
-    //         quantity: item.quantity,
-    //         unitPrice: item.price
-    //       }))
-    //     }
-    //   }
-    // });
-
-    // TODO: Send WhatsApp notification to business number
-    // await sendWhatsAppNotification(orderId, payload);
-
-    // TODO: Log to AuditLog
-    // await prisma.auditLog.create({
-    //   data: {
-    //     action: "ORDER_CREATED",
-    //     entity: "Order",
-    //     entityId: orderId,
-    //     metadata: { customer: payload.customer.email }
-    //   }
-    // });
-
+    const cart = await priceCart(parsed.data);
     return {
       success: true,
-      orderId: orderId,
-      message: "Order submitted successfully. Our team will contact you on WhatsApp within 30 minutes."
+      lines: cart.lines,
+      unavailableIds: cart.unavailableIds,
+      totals: cart.totals,
+      paymentOptions: getPaymentMethodOptions({ orderType: "STANDARD", total: cart.totals.total })
     };
   } catch (error) {
-    console.error("Order submission error:", error);
-    return {
-      success: false,
-      error: "Failed to submit order. Please try again or contact us on WhatsApp."
-    };
+    console.error("Checkout quote error:", error instanceof Error ? error.message : error);
+    return { success: false, error: "We couldn't load current prices. Please refresh and try again." };
   }
 }
 
-/**
- * Placeholder for WhatsApp Business API integration
- * TODO: Implement when ready
- */
-async function sendWhatsAppNotification(orderId: string, payload: OrderPayload) {
-  // const whatsappApiUrl = process.env.WHATSAPP_API_URL;
-  // const whatsappToken = process.env.WHATSAPP_API_TOKEN;
-  // const businessPhoneId = process.env.WHATSAPP_BUSINESS_PHONE_ID;
+/** Checkout submit: session → validation → server pricing → order + payment + history. */
+export async function placeOrder(input: PlaceOrderInput): Promise<PlaceOrderResult> {
+  const user = await getCurrentUser();
+  if (!user) return { success: false, error: "Please log in to place your order." };
+  if (user.role !== "CUSTOMER") return { success: false, error: "Staff accounts can't place customer orders. Please use a customer account." };
 
-  // if (!whatsappApiUrl || !whatsappToken || !businessPhoneId) {
-  //   console.warn("WhatsApp API credentials not configured");
-  //   return;
-  // }
+  if (!devRateLimit(`place-order:${user.id}`, 10, 60_000).ok) {
+    return { success: false, error: "Too many attempts. Please wait a minute and try again." };
+  }
 
-  // try {
-  //   await fetch(`${whatsappApiUrl}/messages`, {
-  //     method: "POST",
-  //     headers: {
-  //       "Authorization": `Bearer ${whatsappToken}`,
-  //       "Content-Type": "application/json"
-  //     },
-  //     body: JSON.stringify({
-  //       messaging_product: "whatsapp",
-  //       to: payload.customer.whatsappNumber,
-  //       type: "template",
-  //       template: {
-  //         name: "order_confirmation",
-  //         language: { code: "en_US" }
-  //       }
-  //     })
-  //   });
-  // } catch (error) {
-  //   console.error("Failed to send WhatsApp notification:", error);
-  // }
+  const parsed = placeOrderSchema.safeParse(input);
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.issues[0]?.message ?? "Please check your order details." };
+  }
+
+  try {
+    return await createOrder(user, parsed.data);
+  } catch (error) {
+    console.error("Place order error:", error instanceof Error ? error.message : error);
+    return { success: false, error: "We couldn't place your order. Please try again, or contact us on WhatsApp." };
+  }
 }

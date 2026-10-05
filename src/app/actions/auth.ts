@@ -6,6 +6,7 @@ import { createSupabaseServerClient, SupabaseConfigError } from "@/lib/supabase/
 import { AppUrlConfigError, getAuthCallbackUrl } from "@/lib/app-url";
 import { clearRecoveryCookie, getRecoveryUser, RESET_PASSWORD_PATH } from "@/lib/auth/recovery";
 import { isAuthError, isAuthRetryableFetchError, type AuthError } from "@supabase/supabase-js";
+import { redirect } from "next/navigation";
 import {
   forgotPasswordSchema,
   loginSchema,
@@ -31,6 +32,7 @@ export type ForgotPasswordResult =
       retryAfterSeconds?: number;
     };
 
+/** On success the action redirects to /login?reset=success instead of returning. */
 export type ResetPasswordResult =
   | { success: true }
   | { success: false; reason: "invalid" | "session_expired" | "failed"; error: string };
@@ -123,7 +125,7 @@ export async function signup(input: SignupInput) {
       email,
       password: validatedData.password,
       options: {
-        emailRedirectTo: await getAuthCallbackUrl("/dashboard/customer"),
+        emailRedirectTo: await getAuthCallbackUrl("/"),
         data: {
           full_name: validatedData.fullName
         }
@@ -332,8 +334,14 @@ export async function forgotPassword(input: ForgotPasswordInput): Promise<Forgot
 
   try {
     const supabase = await createSupabaseServerClient();
+    const redirectTo = await getAuthCallbackUrl(RESET_PASSWORD_PATH);
+    // TEMPORARY diagnostic: the callback URL we ask Supabase to use. It contains no
+    // token or email (Supabase adds the token itself). If the email shows a
+    // different origin than this, Supabase rejected it as not allow-listed and
+    // fell back to the Site URL. Remove once local resets are confirmed.
+    console.info(`[auth] password reset redirectTo=${redirectTo}`);
     const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email.toLowerCase(), {
-      redirectTo: await getAuthCallbackUrl(RESET_PASSWORD_PATH)
+      redirectTo
     });
 
     if (error) {
@@ -393,16 +401,31 @@ export async function resetPassword(input: ResetPasswordInput): Promise<ResetPas
     }
 
     await writeAuditLog(recoveryUser.id, "USER_PASSWORD_RESET");
+    // End the recovery session only after the password change succeeded.
     await supabase.auth.signOut();
     await clearRecoveryCookie();
-
-    return { success: true };
   } catch (error) {
     logAuthError("Reset password error", error);
     return { success: false, reason: "failed", error: "We couldn't update your password. Please try again." };
   }
+
+  // Changing cookies in a Server Action re-renders /reset-password, which (with
+  // the recovery session gone) would show "Reset link required" over the
+  // success message. Send the user straight to login instead. redirect() throws,
+  // so it must stay outside the try/catch above.
+  redirect("/login?reset=success");
 }
 
+/**
+ * Session summary for client components (e.g. the site nav). Returns only
+ * display fields, never the full user row.
+ */
 export async function getCurrentUser() {
-  return getAuthenticatedUser();
+  try {
+    const user = await getAuthenticatedUser();
+    return user ? { id: user.id, fullName: user.fullName, role: user.role } : null;
+  } catch {
+    // Nav only: during a database outage show the signed-out nav rather than failing.
+    return null;
+  }
 }

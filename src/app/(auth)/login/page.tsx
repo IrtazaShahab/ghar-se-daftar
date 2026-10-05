@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
@@ -10,7 +10,38 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LogoFull } from "@/components/brand/logo";
 import Link from "next/link";
-import { Mail, Lock, ChefHat, ShieldCheck, Clock3 } from "lucide-react";
+import { Mail, Lock, ChefHat, ShieldCheck, Clock3, CheckCircle2 } from "lucide-react";
+
+const STAFF_HOME: Record<string, string> = {
+  ADMIN: "/admin",
+  HOME_CHEF: "/chef",
+  CORPORATE_ADMIN: "/dashboard/corporate"
+};
+
+/**
+ * Returning users go back to where they were headed (e.g. /checkout) when the
+ * `next` path is same-origin; otherwise customers go home and staff to their area.
+ */
+function loginDestination(role: string | undefined, next: string | null) {
+  const safeNext = next && next.startsWith("/") && !next.startsWith("//") && !next.includes("\\") ? next : null;
+  if (role && STAFF_HOME[role]) {
+    const area = STAFF_HOME[role];
+    return safeNext && safeNext.startsWith(area) ? safeNext : area;
+  }
+  return safeNext ?? "/";
+}
+
+/** Shown after a successful password reset (the reset action redirects here). */
+function PasswordResetNotice() {
+  const searchParams = useSearchParams();
+  if (searchParams.get("reset") !== "success") return null;
+  return (
+    <div role="status" className="flex items-start gap-3 rounded-[16px] border border-success/20 bg-success/10 p-4 text-sm font-semibold text-success">
+      <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+      Password updated successfully. Log in with your new password.
+    </div>
+  );
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -38,10 +69,7 @@ export default function LoginPage() {
       const result = await login(data);
 
       if (result.success) {
-        const destination = result.role === "CUSTOMER"
-          ? "/"
-          : `/dashboard/${result.role === "ADMIN" ? "admin" : result.role === "CORPORATE_ADMIN" ? "corporate" : "chef"}`;
-        router.replace(destination);
+        router.replace(loginDestination(result.role, new URLSearchParams(window.location.search).get("next")));
         router.refresh();
       } else {
         setError(result.error || "Login failed");
@@ -88,6 +116,9 @@ export default function LoginPage() {
 
           {/* Form */}
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
+            <Suspense fallback={null}>
+              <PasswordResetNotice />
+            </Suspense>
             {error && (
               <div className="rounded-[16px] bg-danger/10 border border-danger/20 p-4 text-sm text-danger font-semibold">
                 {error}

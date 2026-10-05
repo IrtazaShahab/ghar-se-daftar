@@ -27,7 +27,8 @@ export function ResetPasswordForm({ email }: { email: string | null }) {
 
     try {
       const result = await resetPassword(data);
-      if (result.success) {
+      // On success the server redirects to /login; show success while that happens.
+      if (!result || result.success) {
         setState("done");
         return;
       }

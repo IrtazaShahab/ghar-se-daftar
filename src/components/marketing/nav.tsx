@@ -23,6 +23,7 @@ export function MarketingNav() {
   const { state } = useCart();
   const { openCart, activeOverlay, toggleOverlay, closeOverlay } = useCartDrawer();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [role, setRole] = useState<string | null>(null);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const itemCount = state.items.reduce((sum, item) => sum + item.quantity, 0);
@@ -30,11 +31,16 @@ export function MarketingNav() {
   useEffect(() => {
     let isMounted = true;
 
-    getCurrentUser().then((user) => {
-      if (isMounted) {
-        setIsAuthenticated(Boolean(user));
-      }
-    });
+    getCurrentUser()
+      .then((user) => {
+        if (isMounted) {
+          setIsAuthenticated(Boolean(user));
+          setRole(user?.role ?? null);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setIsAuthenticated(false);
+      });
 
     return () => {
       isMounted = false;
@@ -57,6 +63,17 @@ export function MarketingNav() {
     };
   }, [activeOverlay, closeOverlay]);
 
+  const accountLinks = role === "ADMIN"
+    ? [{ label: "Admin", href: "/admin", Icon: LayoutDashboard }, { label: "Orders", href: "/admin/orders", Icon: ShoppingBag }]
+    : role === "HOME_CHEF"
+      ? [{ label: "Kitchen", href: "/chef", Icon: LayoutDashboard }, { label: "Orders", href: "/chef/orders", Icon: ShoppingBag }]
+      : [
+          { label: "Dashboard", href: "/dashboard/customer", Icon: LayoutDashboard },
+          { label: "Orders", href: "/dashboard/customer/orders", Icon: ShoppingBag },
+          { label: "Subscriptions", href: "/dashboard/customer/subscriptions", Icon: UtensilsCrossed },
+          { label: "Settings", href: "/dashboard/customer/settings", Icon: Settings }
+        ];
+
   const handleLogout = async () => {
     if (isLoggingOut) return;
 
@@ -65,6 +82,7 @@ export function MarketingNav() {
 
     if (result.success) {
       setIsAuthenticated(false);
+      setRole(null);
       closeOverlay();
       router.refresh();
     }
@@ -105,12 +123,7 @@ export function MarketingNav() {
               <div ref={accountMenuRef}>
               <button type="button" onClick={() => toggleOverlay("profile")} className="focus-ring nav-icon-button grid size-11 place-items-center rounded-full border border-border bg-white/70 text-primary hover:border-primary/20 hover:bg-white" aria-label="Open account menu" aria-expanded={activeOverlay === "profile"} aria-haspopup="menu"><User className="size-5" /></button>
                 <div role="menu" aria-label="Account navigation" aria-hidden={activeOverlay !== "profile"} className={`absolute right-0 top-full mt-3 w-64 origin-top-right overflow-hidden rounded-[22px] border border-border bg-card p-2 shadow-xl shadow-primary/10 transition-[opacity,transform] duration-200 ease-out motion-reduce:transition-none ${activeOverlay === "profile" ? "translate-y-0 scale-100 opacity-100" : "pointer-events-none -translate-y-1.5 scale-[.98] opacity-0"}`}>
-                    {[
-                      { label: "Dashboard", href: "/dashboard/customer", Icon: LayoutDashboard },
-                      { label: "Orders", href: "/dashboard/customer/orders", Icon: ShoppingBag },
-                      { label: "Subscriptions", href: "/dashboard/customer/subscriptions", Icon: UtensilsCrossed },
-                      { label: "Settings", href: "/dashboard/customer/settings", Icon: Settings }
-                    ].map(({ label, href, Icon }) => <Link role="menuitem" key={href} href={href} onClick={closeOverlay} className="focus-ring flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-foreground hover:bg-primary hover:text-white [&:hover_svg]:text-white"><Icon className="size-4 text-primary" />{label}</Link>)}
+                    {accountLinks.map(({ label, href, Icon }) => <Link role="menuitem" key={href} href={href} onClick={closeOverlay} className="focus-ring flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-foreground hover:bg-primary hover:text-white [&:hover_svg]:text-white"><Icon className="size-4 text-primary" />{label}</Link>)}
                     <div className="my-2 border-t border-border" />
                     <button role="menuitem" type="button" onClick={handleLogout} disabled={isLoggingOut} className="focus-ring flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold text-danger hover:bg-danger/10"><LogOut className="size-4" />{isLoggingOut ? "Logging out..." : "Logout"}</button>
                 </div>
@@ -146,12 +159,7 @@ export function MarketingNav() {
             ))}
             {isAuthenticated && (
               <div className="mt-2 grid gap-1 border-t border-border pt-3">
-                {[
-                  { label: "Dashboard", href: "/dashboard/customer", Icon: LayoutDashboard },
-                  { label: "Orders", href: "/dashboard/customer/orders", Icon: ShoppingBag },
-                  { label: "Subscriptions", href: "/dashboard/customer/subscriptions", Icon: UtensilsCrossed },
-                  { label: "Settings", href: "/dashboard/customer/settings", Icon: Settings }
-                ].map(({ label, href, Icon }) => <Link key={href} href={href} onClick={closeOverlay} className="flex items-center gap-3 rounded-2xl px-4 py-3 font-bold text-primary hover:bg-primary/10"><Icon className="size-4" />{label}</Link>)}
+                {accountLinks.map(({ label, href, Icon }) => <Link key={href} href={href} onClick={closeOverlay} className="flex items-center gap-3 rounded-2xl px-4 py-3 font-bold text-primary hover:bg-primary/10"><Icon className="size-4" />{label}</Link>)}
               </div>
             )}
             <div className="mt-3 grid grid-cols-2 gap-3">

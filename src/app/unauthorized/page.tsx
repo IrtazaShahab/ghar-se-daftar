@@ -1,14 +1,20 @@
-import { Button, ButtonLink } from "@/components/ui/button";
+import { ButtonLink } from "@/components/ui/button";
 import { LogoFull } from "@/components/brand/logo";
-import Link from "next/link";
 import { AlertCircle } from "lucide-react";
+import { getCurrentUser } from "@/lib/auth/get-user";
+import { homePathForRole } from "@/lib/auth/guards";
 
 export const metadata = {
   title: "Access Denied",
   description: "You don't have permission to access this page"
 };
 
-export default function UnauthorizedPage() {
+export const dynamic = "force-dynamic";
+
+export default async function UnauthorizedPage() {
+  const user = await getCurrentUser();
+  const dashboardHref = user ? homePathForRole(user.role) : "/login";
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-cream via-white to-primary/5 flex items-center justify-center px-4">
       <div className="text-center max-w-md">
@@ -31,8 +37,8 @@ export default function UnauthorizedPage() {
           <ButtonLink href="/" variant="primary" className="w-full">
             Back to Home
           </ButtonLink>
-          <ButtonLink href="/dashboard/customer" variant="secondary" className="w-full">
-            Go to Dashboard
+          <ButtonLink href={dashboardHref} variant="secondary" className="w-full">
+            {user ? "Go to my dashboard" : "Log in"}
           </ButtonLink>
         </div>
 

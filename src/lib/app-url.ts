@@ -46,13 +46,39 @@ export function getAppUrl() {
 }
 
 /**
- * Builds the absolute /auth/callback URL placed in Supabase emails. Refuses to
- * emit a loopback origin while serving a real host, which is how production
- * emails previously ended up pointing at http://localhost:3000.
+ * Origin the browser used for this request, when it is a local dev server
+ * (e.g. http://localhost:3100). Null in production and for non-loopback hosts.
+ */
+function localRequestOrigin(requestHeaders: Headers) {
+  if (process.env.NODE_ENV === "production") return null;
+
+  const host = (requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "").split(",")[0].trim();
+  const hostname = host.replace(/:\d+$/, "");
+  if (!host || !isLoopback(hostname)) return null;
+
+  const protocol = requestHeaders.get("x-forwarded-proto")?.split(",")[0].trim() === "https" ? "https" : "http";
+  try {
+    return toOrigin(`${protocol}://${host}`);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Builds the absolute /auth/callback URL placed in Supabase emails.
+ *
+ * Production: always NEXT_PUBLIC_APP_URL / the Vercel URL, and it refuses to
+ * emit a loopback origin while serving a real host (which is how production
+ * emails once pointed at http://localhost:3000).
+ *
+ * Development: the origin the request actually came from, so the email link
+ * returns to the same dev server and port (localhost:3000, :3100, …) even if
+ * NEXT_PUBLIC_APP_URL names a different port. Auth cookies are then set and
+ * read on one origin.
  */
 export async function getAuthCallbackUrl(next: string) {
-  const appUrl = new URL(getAppUrl());
   const requestHeaders = await headers();
+  const appUrl = new URL(localRequestOrigin(requestHeaders) ?? getAppUrl());
   const requestHost = (requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "")
     .split(",")[0]
     .trim()

@@ -6,9 +6,10 @@ import { WhatsAppButton } from "@/components/ui/whatsapp-button";
 import { X, Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
 import { formatCurrencyPKR } from "@/lib/utils";
 import { generateCartInquiryMessage } from "@/lib/order";
+import { FREE_DELIVERY_MESSAGE, amountToFreeDelivery, calculateOrderTotals } from "@/lib/orders/pricing";
 import { FoodImage } from "@/components/ui/food-image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export interface CartDrawerProps {
   isOpen: boolean;
@@ -17,25 +18,11 @@ export interface CartDrawerProps {
 
 export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
   const { state, dispatch } = useCart();
-  const [selectedPlan, setSelectedPlan] = useState<string>("single");
 
+  // Estimate only; checkout shows the server-calculated total from menu prices.
   const subtotal = state.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const deliveryFee = 0; // TODO: Calculate based on area
-  const total = subtotal + deliveryFee;
-
-  const planPrices = {
-    single: subtotal,
-    weekly: 1750,
-    monthly: 6500,
-    corporate: 0
-  };
-
-  const selectedPlanLabel = {
-    single: "Single Meals",
-    weekly: "Weekly Office Plan",
-    monthly: "Monthly Subscription",
-    corporate: "Corporate Request"
-  };
+  const { deliveryFee, total } = calculateOrderTotals(subtotal);
+  const toFreeDelivery = amountToFreeDelivery(subtotal);
 
   const handleRemoveItem = (id: string) => {
     dispatch({ type: "REMOVE_ITEM", payload: id });
@@ -47,12 +34,6 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
     } else {
       handleRemoveItem(id);
     }
-  };
-
-  const handleSelectPlan = (plan: string) => {
-    const selected = plan as "single" | "weekly" | "monthly" | "corporate";
-    setSelectedPlan(selected);
-    dispatch({ type: "SET_PLAN", payload: selected });
   };
 
   const isEmpty = state.items.length === 0;
@@ -173,71 +154,46 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                     ))}
                   </div>
 
-                  {/* Plan Selection */}
-                  <div className="border-t border-border px-6 py-6">
-                    <h3 className="text-sm font-semibold mb-3">Select Plan</h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      {[
-                        { value: "single", label: "Single", hint: "Trial" },
-                        { value: "weekly", label: "Weekly", hint: "Popular" },
-                        { value: "monthly", label: "Monthly", hint: "Best value" },
-                        { value: "corporate", label: "Corporate", hint: "Teams" }
-                      ].map((plan) => (
-                        <button
-                          key={plan.value}
-                          onClick={() => handleSelectPlan(plan.value)}
-                          className={`rounded-[16px] p-3 text-xs font-semibold transition text-center ${
-                            selectedPlan === plan.value
-                              ? "bg-primary text-white"
-                              : "bg-card border border-border hover:bg-white/80"
-                          }`}
-                        >
-                          <div>{plan.label}</div>
-                          <div className={selectedPlan === plan.value ? "text-white/75 text-xs mt-1" : "text-muted text-xs mt-1"}>
-                            {plan.hint}
-                          </div>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   {/* Order Summary */}
                   <div className="border-t border-border px-6 py-6 space-y-3 bg-white/50">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted">Subtotal</span>
                       <span className="font-semibold">{formatCurrencyPKR(subtotal).replace("PKR", "Rs.")}</span>
                     </div>
-                    {deliveryFee > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted">Delivery</span>
-                        <span className="font-semibold">{formatCurrencyPKR(deliveryFee).replace("PKR", "Rs.")}</span>
-                      </div>
-                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted">Delivery</span>
+                      <span className="font-semibold">{deliveryFee === 0 ? "FREE" : formatCurrencyPKR(deliveryFee).replace("PKR", "Rs.")}</span>
+                    </div>
                     <div className="border-t border-border pt-3 flex justify-between">
-                      <span className="font-semibold">Total</span>
+                      <span className="font-semibold">Estimated total</span>
                       <span className="font-serif text-lg font-semibold text-primary">
-                        {formatCurrencyPKR(planPrices[selectedPlan as keyof typeof planPrices]).replace("PKR", "Rs.")}
+                        {formatCurrencyPKR(total).replace("PKR", "Rs.")}
                       </span>
                     </div>
+                    <p className="rounded-2xl bg-primary/5 px-3 py-2 text-xs font-semibold text-primary">
+                      {toFreeDelivery > 0
+                        ? `${FREE_DELIVERY_MESSAGE} Add Rs. ${toFreeDelivery} more to qualify.`
+                        : "You've unlocked free delivery."}
+                    </p>
                   </div>
 
                   {/* Checkout Buttons */}
                   <div className="border-t border-border px-6 py-4 space-y-3">
-                    <Link href={`/checkout?plan=${selectedPlan}`} className="w-full block">
+                    <Link href="/checkout" onClick={onClose} className="w-full block">
                       <Button className="w-full" variant="primary">
                         Proceed to Checkout
                       </Button>
                     </Link>
                     <WhatsAppButton
                       variant="inline"
-                      message={generateCartInquiryMessage(
-                        state.items,
-                        selectedPlan,
-                        subtotal,
-                        planPrices[selectedPlan as keyof typeof planPrices]
-                      )}
+                      message={generateCartInquiryMessage(state.items, subtotal, total)}
                       className="w-full"
                     />
+                    <p className="text-center text-xs text-muted">
+                      Want a regular plan? <Link href="/subscribe" onClick={onClose} className="font-bold text-primary hover:underline">Weekly &amp; monthly plans</Link>
+                      {" · "}
+                      <Link href="/corporate-order" onClick={onClose} className="font-bold text-primary hover:underline">Corporate lunch</Link>
+                    </p>
                   </div>
                 </>
               )}

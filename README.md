@@ -40,7 +40,7 @@ npm run db:generate
 npm run dev
 ```
 
-Open `http://localhost:3000`.
+Open `http://localhost:3100`.
 
 ## Database Setup
 
@@ -51,12 +51,16 @@ DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
 DIRECT_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
 ```
 
-Then run:
+Then apply the SQL migrations in `supabase/migrations/` and seed the menu:
 
 ```bash
-npm run db:migrate
+npx prisma generate
 npm run seed
 ```
+
+See [`docs/ORDER_PLATFORM.md`](docs/ORDER_PLATFORM.md) for the full setup
+(migrations, first admin, chefs, email, payments and local testing) and
+[`docs/SUPABASE_AUTH_EMAILS.md`](docs/SUPABASE_AUTH_EMAILS.md) for auth emails.
 
 ## Important Production Notes
 

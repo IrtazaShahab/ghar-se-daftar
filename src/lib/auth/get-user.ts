@@ -1,10 +1,13 @@
-import { prisma } from "@/lib/db/prisma";
+import { cache } from "react";
+import { unstable_rethrow } from "next/navigation";
+import { describeDbError, isTransientDbError, prisma } from "@/lib/db/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 /**
  * Get the current Supabase-authenticated user with app profile data.
+ * Cached per request, so layouts, pages and guards share one lookup.
  */
-export async function getCurrentUser() {
+export const getCurrentUser = cache(async function getCurrentUser() {
   try {
     const supabase = await createSupabaseServerClient();
     const { data, error } = await supabase.auth.getUser();
@@ -43,10 +46,18 @@ export async function getCurrentUser() {
 
     return user;
   } catch (error) {
-    console.error("Get current user error:", error);
+    // Let Next.js handle its own control-flow errors (e.g. marking a route dynamic).
+    unstable_rethrow(error);
+    // A database outage is not "logged out": rethrow so the page's error boundary
+    // shows a retry message instead of redirecting to /login.
+    if (isTransientDbError(error)) {
+      console.error(`Get current user: database unavailable (${describeDbError(error)})`);
+      throw error;
+    }
+    console.error("Get current user error:", error instanceof Error ? error.message : error);
     return null;
   }
-}
+});
 
 /**
  * Require authentication - throw if not authenticated.

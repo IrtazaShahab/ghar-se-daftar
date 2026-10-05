@@ -4,11 +4,18 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  // The configured transaction-pooler endpoint on port 6543 is not reachable.
-  // Use the working Supabase session-pooler endpoint for application queries too.
-  url       = env("DIRECT_URL")
+  // Runtime queries: DATABASE_URL (Supavisor transaction pooler, port 6543, in
+  // production). src/lib/db/prisma.ts adds pgbouncer=true and a small
+  // connection_limit when they're missing.
+  url       = env("DATABASE_URL")
+  // Prisma CLI / introspection: DIRECT_URL (Supavisor session pooler, port 5432).
   directUrl = env("DIRECT_URL")
 }
+
+// Prisma connects as the table owner, so Row Level Security (see
+// supabase/migrations/*_security.sql) does not apply to server code. RLS guards
+// the same tables when they are reached through the Supabase Data API with the
+// publishable/anon key. Server-side authorization lives in src/lib/auth/guards.ts.
 
 enum UserRole {
   CUSTOMER
@@ -32,18 +39,78 @@ enum SubscriptionStatus {
 
 enum PaymentStatus {
   PENDING
+  PROCESSING
   PAID
   FAILED
   REFUNDED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  COD
+  EASYPAISA
+  JAZZCASH
+  CARD
+  BANK_TRANSFER
+  INVOICE
 }
 
 enum OrderStatus {
-  DRAFT
+  PENDING
   CONFIRMED
   PREPARING
+  READY
   OUT_FOR_DELIVERY
   DELIVERED
   CANCELLED
+}
+
+enum OrderType {
+  STANDARD
+  CORPORATE
+}
+
+enum ChefAssignmentStatus {
+  ASSIGNED
+  ACCEPTED
+  REPLACED
+  CANCELLED
+}
+
+enum NotificationChannel {
+  EMAIL
+  IN_APP
+}
+
+enum NotificationAudience {
+  CUSTOMER
+  ADMIN
+  CHEF
+  CORPORATE
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum CorporateRequestStatus {
+  NEW
+  CONTACTED
+  QUOTE_SENT
+  ACCEPTED
+  REJECTED
+  CONVERTED
+}
+
+enum CorporateQuoteStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
 }
 
 enum PlanType {
@@ -54,21 +121,26 @@ enum PlanType {
 }
 
 model User {
-  id            String         @id @default(cuid())
-  email         String?        @unique
-  phone         String?        @unique
-  fullName      String
-  passwordHash  String?
-  role          UserRole       @default(CUSTOMER)
-  status        UserStatus     @default(ACTIVE)
-  emailVerified DateTime?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
-  profile       Profile?
-  addresses     Address[]
-  subscriptions Subscription[]
-  orders        Order[]
-  auditLogs     AuditLog[]     @relation("AuditActor")
+  id                String                @id @default(cuid())
+  email             String?               @unique
+  phone             String?               @unique
+  fullName          String
+  passwordHash      String?
+  role              UserRole              @default(CUSTOMER)
+  status            UserStatus            @default(ACTIVE)
+  emailVerified     DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  profile           Profile?
+  addresses         Address[]
+  subscriptions     Subscription[]
+  orders            Order[]
+  auditLogs         AuditLog[]            @relation("AuditActor")
+  homeChef          HomeChef?
+  statusChanges     OrderStatusHistory[]
+  notifications     Notification[]
+  corporateRequests CorporateRequest[]
+  payments          Payment[]
 
   @@index([role])
   @@index([status])
@@ -79,6 +151,7 @@ model Profile {
   id                   String   @id @default(cuid())
   userId               String   @unique
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone                String?
   whatsappNumber       String?
   companyName          String?
   deliveryArea         String?
@@ -102,6 +175,7 @@ model Address {
   longitude Float?
   user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   company   Company? @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  orders    Order[]
   createdAt DateTime @default(now())
 
   @@index([city, area])
@@ -110,19 +184,20 @@ model Address {
 }
 
 model Company {
-  id          String              @id @default(cuid())
-  name        String
-  contactName String
-  contactPhone String
-  billingEmail String?
-  employeeCount Int?
-  isActive    Boolean             @default(true)
-  createdAt   DateTime            @default(now())
-  updatedAt   DateTime            @updatedAt
-  employees   CompanyEmployee[]
-  addresses   Address[]
-  orders      Order[]
-  invoices    Invoice[]
+  id                String             @id @default(cuid())
+  name              String
+  contactName       String
+  contactPhone      String
+  billingEmail      String?
+  employeeCount     Int?
+  isActive          Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  employees         CompanyEmployee[]
+  addresses         Address[]
+  orders            Order[]
+  invoices          Invoice[]
+  corporateRequests CorporateRequest[]
 
   @@index([name])
 }
@@ -141,31 +216,39 @@ model CompanyEmployee {
 }
 
 model HomeChef {
-  id          String    @id @default(cuid())
-  userId      String?   @unique
+  id          String           @id @default(cuid())
+  userId      String?          @unique
+  user        User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
   displayName String
+  phone       String?
   area        String
   city        String
   specialty   String
-  verified    Boolean   @default(false)
-  rating      Float     @default(0)
+  verified    Boolean          @default(false)
+  isActive    Boolean          @default(true)
+  rating      Float            @default(0)
   kitchens    Kitchen[]
   orders      Order[]
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  assignments ChefAssignment[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   @@index([city, area])
   @@index([verified])
 }
 
 model Kitchen {
-  id             String   @id @default(cuid())
-  homeChefId     String
-  hygieneScore   Int?
+  id                String           @id @default(cuid())
+  homeChefId        String
+  name              String           @default("Home kitchen")
+  area              String?
+  hygieneScore      Int?
   verificationNotes String?
-  isApproved     Boolean  @default(false)
-  homeChef       HomeChef @relation(fields: [homeChefId], references: [id], onDelete: Cascade)
-  createdAt      DateTime @default(now())
+  isApproved        Boolean          @default(false)
+  homeChef          HomeChef         @relation(fields: [homeChefId], references: [id], onDelete: Cascade)
+  orders            Order[]
+  assignments       ChefAssignment[]
+  createdAt         DateTime         @default(now())
 
   @@index([homeChefId])
 }
@@ -184,28 +267,29 @@ model MenuWeek {
 }
 
 model MenuDay {
-  id        String       @id @default(cuid())
+  id         String       @id @default(cuid())
   menuWeekId String
-  dayName   String
-  date      DateTime?
-  isAddon   Boolean      @default(false)
-  menuWeek  MenuWeek     @relation(fields: [menuWeekId], references: [id], onDelete: Cascade)
-  options   MenuOption[]
+  dayName    String
+  date       DateTime?
+  isAddon    Boolean      @default(false)
+  menuWeek   MenuWeek     @relation(fields: [menuWeekId], references: [id], onDelete: Cascade)
+  options    MenuOption[]
 
   @@index([menuWeekId])
   @@index([date])
 }
 
+/// Source of truth for meal prices. Checkout never trusts prices sent by the browser.
 model MenuOption {
-  id          String      @id @default(cuid())
-  menuDayId   String
-  name        String
-  description String?
-  items       String
-  price       Int         @default(350)
-  isAvailable Boolean     @default(true)
-  menuDay     MenuDay     @relation(fields: [menuDayId], references: [id], onDelete: Cascade)
-  orderItems  OrderItem[]
+  id                String             @id @default(cuid())
+  menuDayId         String
+  name              String
+  description       String?
+  items             String
+  price             Int                @default(350)
+  isAvailable       Boolean            @default(true)
+  menuDay           MenuDay            @relation(fields: [menuDayId], references: [id], onDelete: Cascade)
+  orderItems        OrderItem[]
   subscriptionItems SubscriptionItem[]
 
   @@index([menuDayId])
@@ -213,19 +297,19 @@ model MenuOption {
 }
 
 model Subscription {
-  id          String             @id @default(cuid())
-  userId      String?
-  companyId   String?
-  planType    PlanType
-  status      SubscriptionStatus @default(ACTIVE)
-  startsOn    DateTime
-  endsOn      DateTime?
-  price       Int
-  user        User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  items       SubscriptionItem[]
-  payments    Payment[]
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id        String             @id @default(cuid())
+  userId    String?
+  companyId String?
+  planType  PlanType
+  status    SubscriptionStatus @default(ACTIVE)
+  startsOn  DateTime
+  endsOn    DateTime?
+  price     Int
+  user      User?              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     SubscriptionItem[]
+  payments  Payment[]
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
 
   @@index([userId])
   @@index([companyId])
@@ -245,92 +329,285 @@ model SubscriptionItem {
   @@index([serviceDate])
 }
 
+/// Amounts are whole PKR. Customer, address and price fields are snapshots taken
+/// when the order is placed so later profile or menu edits never rewrite history.
 model Order {
-  id          String      @id @default(cuid())
-  userId      String?
-  companyId   String?
-  homeChefId   String?
-  status      OrderStatus @default(DRAFT)
-  deliveryDate DateTime
-  totalAmount Int
-  user        User?       @relation(fields: [userId], references: [id])
-  company     Company?    @relation(fields: [companyId], references: [id])
-  homeChef    HomeChef?   @relation(fields: [homeChefId], references: [id])
-  items       OrderItem[]
-  payment     Payment?
-  delivery    Delivery?
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  id                  String               @id @default(cuid())
+  orderNumber         String               @unique
+  /// "<userId>:<client key>" so a double-submitted checkout returns the same order.
+  idempotencyKey      String?              @unique
+  userId              String?
+  companyId           String?
+  orderType           OrderType            @default(STANDARD)
+  customerName        String
+  customerEmail       String
+  customerPhone       String
+  customerWhatsapp    String?
+  companyName         String?
+  addressId           String?
+  deliveryAddress     String
+  deliveryArea        String
+  deliveryCity        String               @default("Lahore")
+  deliveryDate        DateTime
+  deliverySlot        String?
+  specialInstructions String?
+  subtotal            Int
+  deliveryFee         Int                  @default(0)
+  discount            Int                  @default(0)
+  totalAmount         Int
+  currency            String               @default("PKR")
+  paymentMethod       PaymentMethod        @default(COD)
+  paymentStatus       PaymentStatus        @default(PENDING)
+  status              OrderStatus          @default(PENDING)
+  /// Kept on the original "homeChefId" column.
+  assignedChefId      String?              @map("homeChefId")
+  assignedKitchenId   String?
+  cancellationReason  String?
+  confirmedAt         DateTime?
+  deliveredAt         DateTime?
+  cancelledAt         DateTime?
+  user                User?                @relation(fields: [userId], references: [id])
+  company             Company?             @relation(fields: [companyId], references: [id])
+  address             Address?             @relation(fields: [addressId], references: [id], onDelete: SetNull)
+  assignedChef        HomeChef?            @relation(fields: [assignedChefId], references: [id])
+  assignedKitchen     Kitchen?             @relation(fields: [assignedKitchenId], references: [id])
+  items               OrderItem[]
+  payments            Payment[]
+  statusHistory       OrderStatusHistory[]
+  chefAssignments     ChefAssignment[]
+  notifications       Notification[]
+  delivery            Delivery?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
 
-  @@index([userId])
+  @@index([userId, createdAt])
   @@index([companyId])
-  @@index([homeChefId])
+  @@index([assignedChefId])
+  @@index([status, createdAt])
+  @@index([paymentStatus])
+  @@index([paymentMethod])
   @@index([deliveryDate, status])
 }
 
 model OrderItem {
-  id          String     @id @default(cuid())
-  orderId     String
+  id           String     @id @default(cuid())
+  orderId      String
   menuOptionId String
-  quantity    Int        @default(1)
-  unitPrice   Int
-  order       Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  menuOption  MenuOption @relation(fields: [menuOptionId], references: [id])
+  itemName     String     @default("")
+  itemDetails  String?
+  serviceDay   String?
+  quantity     Int        @default(1)
+  unitPrice    Int
+  lineTotal    Int        @default(0)
+  order        Order      @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuOption   MenuOption @relation(fields: [menuOptionId], references: [id])
 
   @@index([orderId])
   @@index([menuOptionId])
 }
 
+/// One row per payment attempt. Only verified provider responses/webhooks or an
+/// admin recording an offline collection (COD, bank transfer, invoice) may set PAID.
 model Payment {
-  id             String        @id @default(cuid())
-  orderId         String?       @unique
-  subscriptionId  String?
-  provider        String
-  providerRef     String?       @unique
-  amount          Int
-  status          PaymentStatus @default(PENDING)
-  order           Order?        @relation(fields: [orderId], references: [id])
-  subscription    Subscription? @relation(fields: [subscriptionId], references: [id])
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                    String          @id @default(cuid())
+  orderId               String?
+  subscriptionId        String?
+  corporateQuoteId      String?
+  userId                String?
+  provider              String
+  method                PaymentMethod
+  amount                Int
+  currency              String          @default("PKR")
+  status                PaymentStatus   @default(PENDING)
+  providerTransactionId String?         @unique
+  providerReference     String?
+  failureReason         String?
+  metadata              Json?
+  recordedById          String?
+  paidAt                DateTime?
+  order                 Order?          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  subscription          Subscription?   @relation(fields: [subscriptionId], references: [id])
+  corporateQuote        CorporateQuote? @relation(fields: [corporateQuoteId], references: [id], onDelete: SetNull)
+  user                  User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  events                PaymentEvent[]
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
+  @@index([orderId])
   @@index([subscriptionId])
-  @@index([status])
+  @@index([corporateQuoteId])
+  @@index([status, createdAt])
+  @@index([method])
+}
+
+/// Provider webhook deliveries, stored once per (provider, eventId) so retries are no-ops.
+model PaymentEvent {
+  id          String    @id @default(cuid())
+  provider    String
+  eventId     String
+  eventType   String
+  paymentId   String?
+  payload     Json
+  processedAt DateTime?
+  error       String?
+  payment     Payment?  @relation(fields: [paymentId], references: [id], onDelete: SetNull)
+  createdAt   DateTime  @default(now())
+
+  @@unique([provider, eventId])
+  @@index([paymentId])
+}
+
+model OrderStatusHistory {
+  id            String       @id @default(cuid())
+  orderId       String
+  fromStatus    OrderStatus?
+  toStatus      OrderStatus
+  changedById   String?
+  changedByRole UserRole?
+  note          String?
+  order         Order        @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  changedBy     User?        @relation(fields: [changedById], references: [id], onDelete: SetNull)
+  createdAt     DateTime     @default(now())
+
+  @@index([orderId, createdAt])
+}
+
+model ChefAssignment {
+  id           String               @id @default(cuid())
+  orderId      String
+  homeChefId   String
+  kitchenId    String?
+  status       ChefAssignmentStatus @default(ASSIGNED)
+  assignedById String?
+  note         String?
+  assignedAt   DateTime             @default(now())
+  acceptedAt   DateTime?
+  endedAt      DateTime?
+  order        Order                @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  homeChef     HomeChef             @relation(fields: [homeChefId], references: [id], onDelete: Cascade)
+  kitchen      Kitchen?             @relation(fields: [kitchenId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@index([homeChefId, status])
+}
+
+/// Email and in-app notifications. `dedupeKey` is unique so each event is sent once.
+model Notification {
+  id                 String               @id @default(cuid())
+  type               String
+  channel            NotificationChannel
+  audience           NotificationAudience
+  status             NotificationStatus   @default(PENDING)
+  userId             String?
+  orderId            String?
+  corporateRequestId String?
+  recipient          String?
+  subject            String?
+  body               String?
+  dedupeKey          String?              @unique
+  error              String?
+  sentAt             DateTime?
+  readAt             DateTime?
+  user               User?                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  order              Order?               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  corporateRequest   CorporateRequest?    @relation(fields: [corporateRequestId], references: [id], onDelete: Cascade)
+  createdAt          DateTime             @default(now())
+
+  @@index([audience, channel, createdAt])
+  @@index([userId])
+  @@index([orderId])
+}
+
+model CorporateRequest {
+  id            String                 @id @default(cuid())
+  reference     String                 @unique
+  userId        String?
+  companyId     String?
+  companyName   String
+  contactPerson String
+  email         String
+  phone         String
+  employees     Int
+  area          String
+  city          String                 @default("Lahore")
+  notes         String?
+  status        CorporateRequestStatus @default(NEW)
+  adminNotes    String?
+  contactedAt   DateTime?
+  convertedAt   DateTime?
+  user          User?                  @relation(fields: [userId], references: [id], onDelete: SetNull)
+  company       Company?               @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  quotes        CorporateQuote[]
+  notifications Notification[]
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  @@index([status, createdAt])
+}
+
+model CorporateQuote {
+  id                    String               @id @default(cuid())
+  quoteNumber           String               @unique
+  requestId             String
+  pricePerMeal          Int
+  mealsPerDay           Int
+  serviceDays           Int
+  schedule              String
+  deliveryCharges       Int                  @default(0)
+  subtotal              Int
+  discount              Int                  @default(0)
+  total                 Int
+  validUntil            DateTime
+  status                CorporateQuoteStatus @default(DRAFT)
+  notes                 String?
+  /// Unguessable token for the company's quote link (/corporate/quote/<token>).
+  accessToken           String               @unique
+  selectedPaymentMethod PaymentMethod?
+  createdById           String?
+  sentAt                DateTime?
+  acceptedAt            DateTime?
+  rejectedAt            DateTime?
+  request               CorporateRequest     @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  payments              Payment[]
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+
+  @@index([requestId])
 }
 
 model Invoice {
-  id        String   @id @default(cuid())
+  id        String        @id @default(cuid())
   companyId String
   month     Int
   year      Int
   amount    Int
   status    PaymentStatus @default(PENDING)
-  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
+  company   Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
 
   @@unique([companyId, month, year])
 }
 
 model DeliveryZone {
-  id        String   @id @default(cuid())
-  city      String
-  area      String
-  isActive  Boolean  @default(true)
-  cutoffTime String  @default("10:30")
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  city       String
+  area       String
+  isActive   Boolean  @default(true)
+  cutoffTime String   @default("10:30")
+  createdAt  DateTime @default(now())
 
   @@unique([city, area])
 }
 
 model Delivery {
-  id        String   @id @default(cuid())
-  orderId   String   @unique
-  riderName String?
-  riderPhone String?
-  pickupAt  DateTime?
+  id          String    @id @default(cuid())
+  orderId     String    @unique
+  riderName   String?
+  riderPhone  String?
+  pickupAt    DateTime?
   deliveredAt DateTime?
-  notes     String?
-  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  notes       String?
+  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
 }
 
 model Complaint {

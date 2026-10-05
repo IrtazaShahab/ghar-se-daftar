@@ -14,12 +14,20 @@ export class SupabaseConfigError extends Error {
   }
 }
 
+/**
+ * The browser-safe key: Supabase's newer "publishable" key, or the legacy anon
+ * key. Never the service-role key.
+ */
+export function getSupabasePublicKey() {
+  return (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)?.trim();
+}
+
 function getSupabaseEnv() {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  const anonKey = getSupabasePublicKey();
   const missing = [
     !url && "NEXT_PUBLIC_SUPABASE_URL",
-    !anonKey && "NEXT_PUBLIC_SUPABASE_ANON_KEY"
+    !anonKey && "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY"
   ].filter((name): name is string => Boolean(name));
 
   if (missing.length > 0) throw new SupabaseConfigError(missing);
