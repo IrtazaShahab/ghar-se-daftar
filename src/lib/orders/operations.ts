@@ -1,4 +1,4 @@
-import { after } from "next/server";
+import { runAfter } from "@/lib/run-after";
 import type { OrderStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import type { Actor } from "@/lib/auth/guards";
@@ -11,11 +11,27 @@ export type OperationResult = { ok: true } | { ok: false; error: string };
 
 const STALE_ERROR = "This order was just updated by someone else. Refresh the page and try again.";
 
+/**
+ * Audit entries are written after the response is sent: they are best-effort
+ * records, and awaiting them added a full database round trip to every click.
+ */
 function audit(actor: Actor, action: string, entity: string, entityId: string, metadata?: Prisma.InputJsonValue) {
-  return prisma.auditLog
-    .create({ data: { actorId: actor.userId, action, entity, entityId, metadata } })
-    .catch(() => undefined);
+  runAfter(() =>
+    prisma.auditLog
+      .create({ data: { actorId: actor.userId, action, entity, entityId, metadata } })
+      .then(() => undefined)
+      .catch(() => undefined)
+  );
 }
+
+/** Live-location columns, cleared whenever a delivery stops being active. */
+export const CLEARED_LOCATION = {
+  sharingStartedAt: null,
+  lastLatitude: null,
+  lastLongitude: null,
+  lastAccuracyM: null,
+  lastLocationAt: null
+} satisfies Prisma.DeliveryUpdateManyMutationInput;
 
 function statusTimestamps(to: OrderStatus): Prisma.OrderUpdateManyMutationInput {
   const now = new Date();
@@ -31,6 +47,8 @@ type TransitionInput = {
   actor: Actor;
   /** Required when a chef acts: their HomeChef id. */
   chefId?: string;
+  /** Required when a rider acts: their Rider id (from the session, never the browser). */
+  riderId?: string;
   note?: string;
   /** Marking a COD order delivered: was the cash collected? */
   codCollected?: boolean;
@@ -55,7 +73,8 @@ export async function transitionOrder(input: TransitionInput): Promise<Operation
       paymentMethod: true,
       paymentStatus: true,
       assignedChefId: true,
-      chefAssignments: { where: { status: { in: ["ASSIGNED", "ACCEPTED"] } }, select: { id: true, homeChefId: true, status: true } }
+      chefAssignments: { where: { status: { in: ["ASSIGNED", "ACCEPTED"] } }, select: { id: true, homeChefId: true, status: true } },
+      delivery: { select: { id: true, riderId: true, status: true } }
     }
   });
   if (!order) return { ok: false, error: "Order not found." };
@@ -71,6 +90,15 @@ export async function transitionOrder(input: TransitionInput): Promise<Operation
       return { ok: false, error: "This order isn't assigned to you." };
     }
     if (assignment.status !== "ACCEPTED") return { ok: false, error: "Accept the order first, then continue." };
+  }
+
+  if (actor.role === "RIDER") {
+    const delivery = order.delivery;
+    if (!input.riderId || !delivery || delivery.riderId !== input.riderId) {
+      return { ok: false, error: "This delivery isn't assigned to you." };
+    }
+    if (to === "OUT_FOR_DELIVERY" && delivery.status !== "ACCEPTED") return { ok: false, error: "Accept the delivery first, then pick it up." };
+    if (to === "DELIVERED" && delivery.status !== "PICKED_UP") return { ok: false, error: "Pick up the order before marking it delivered." };
   }
 
   if (to === "CONFIRMED" && requiresPrepayment({ orderType: order.orderType, total: order.totalAmount }) && order.paymentStatus !== "PAID") {
@@ -117,6 +145,18 @@ export async function transitionOrder(input: TransitionInput): Promise<Operation
         });
       }
 
+      // Keep the rider's delivery in step with the order, whoever moved it.
+      if (order.delivery?.riderId) {
+        const now = new Date();
+        if (to === "OUT_FOR_DELIVERY") {
+          await tx.delivery.updateMany({ where: { id: order.delivery.id, status: { in: ["ASSIGNED", "ACCEPTED"] } }, data: { status: "PICKED_UP", pickupAt: now } });
+        } else if (to === "DELIVERED") {
+          await tx.delivery.updateMany({ where: { id: order.delivery.id }, data: { status: "DELIVERED", deliveredAt: now, ...CLEARED_LOCATION } });
+        } else if (to === "CANCELLED") {
+          await tx.delivery.updateMany({ where: { id: order.delivery.id }, data: { status: "CANCELLED", cancelledAt: now, ...CLEARED_LOCATION } });
+        }
+      }
+
       await tx.orderStatusHistory.create({
         data: {
           orderId: order.id,
@@ -133,8 +173,8 @@ export async function transitionOrder(input: TransitionInput): Promise<Operation
     throw error;
   }
 
-  await audit(actor, "ORDER_STATUS_CHANGED", "Order", order.id, { from, to, codCollected: collectCash });
-  after(async () => {
+  audit(actor, "ORDER_STATUS_CHANGED", "Order", order.id, { from, to, codCollected: collectCash });
+  runAfter(async () => {
     await notifyOrderStatusChanged(order.id, to);
     if (collectCash) await notifyPaymentReceived(order.id);
   });
@@ -194,8 +234,8 @@ export async function assignChef({
     await tx.order.update({ where: { id: order.id }, data: { assignedChefId: chef.id, assignedKitchenId: kitchen?.id ?? null } });
   });
 
-  await audit(actor, "ORDER_CHEF_ASSIGNED", "Order", order.id, { homeChefId: chef.id, kitchenId: kitchen?.id ?? null });
-  after(() => notifyChefAssigned(order.id, chef.userId, order.orderNumber));
+  audit(actor, "ORDER_CHEF_ASSIGNED", "Order", order.id, { homeChefId: chef.id, kitchenId: kitchen?.id ?? null });
+  runAfter(() => notifyChefAssigned(order.id, chef.userId, order.orderNumber));
   return { ok: true };
 }
 
@@ -207,7 +247,7 @@ export async function acceptAssignment({ orderId, chefId, actor }: { orderId: st
   });
   if (updated.count === 0) return { ok: false, error: "This order is no longer waiting for you to accept it." };
 
-  await audit(actor, "ORDER_ACCEPTED_BY_CHEF", "Order", orderId, { chefId });
+  audit(actor, "ORDER_ACCEPTED_BY_CHEF", "Order", orderId, { chefId });
   return { ok: true };
 }
 
@@ -270,10 +310,10 @@ export async function recordOfflinePayment({
     throw error;
   });
 
-  await audit(actor, "PAYMENT_RECORDED", "Payment", payment.id, { reference: reference?.trim() || null });
+  audit(actor, "PAYMENT_RECORDED", "Payment", payment.id, { reference: reference?.trim() || null });
   if (payment.orderId) {
     const orderId = payment.orderId;
-    after(() => notifyPaymentReceived(orderId));
+    runAfter(() => notifyPaymentReceived(orderId));
   }
   return { ok: true };
 }

@@ -59,8 +59,15 @@ npm run seed
 ```
 
 See [`docs/ORDER_PLATFORM.md`](docs/ORDER_PLATFORM.md) for the full setup
-(migrations, first admin, chefs, email, payments and local testing) and
-[`docs/SUPABASE_AUTH_EMAILS.md`](docs/SUPABASE_AUTH_EMAILS.md) for auth emails.
+(migrations, first admin, chefs, email, payments and local testing),
+[`docs/DELIVERY_AND_RIDERS.md`](docs/DELIVERY_AND_RIDERS.md) for riders, live
+tracking, Google Maps and delivery windows,
+[`docs/PERFORMANCE.md`](docs/PERFORMANCE.md) for what makes pages fast (and what
+slows them down), and [`docs/SUPABASE_AUTH_EMAILS.md`](docs/SUPABASE_AUTH_EMAILS.md)
+for auth emails.
+
+Tests: `npm test` (unit). The delivery-flow integration test runs against a
+local database only: `TEST_DATABASE_URL=postgresql://postgres@localhost:PORT/db npm test`.
 
 ## Important Production Notes
 

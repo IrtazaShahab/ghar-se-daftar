@@ -1,7 +1,7 @@
 import { ChefHat, Plus } from "lucide-react";
 import { prisma } from "@/lib/db/prisma";
 import { requireAdminPage } from "@/lib/auth/guards";
-import { addKitchen, createChef, setChefActive } from "@/app/actions/admin-chefs";
+import { addKitchen, createChef, setChefActive, setKitchenAddress } from "@/app/actions/admin-chefs";
 import { ActionButton, ActionForm } from "@/components/admin/action-controls";
 import { Field, PageHeader, fieldClass } from "@/components/admin/ui";
 import { Panel, PanelTitle } from "@/components/orders/order-details";
@@ -54,9 +54,18 @@ export default async function AdminChefsPage() {
 
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 {chef.kitchens.map((kitchen) => (
-                  <div key={kitchen.id} className="rounded-2xl border border-border bg-white/60 px-4 py-3 text-sm">
+                  <div key={kitchen.id} className="min-w-0 rounded-2xl border border-border bg-white/60 px-4 py-3 text-sm">
                     <p className="font-semibold">{kitchen.name}</p>
                     <p className="text-xs text-muted">{kitchen.area ?? chef.area}</p>
+                    <p className="mt-1 break-words text-xs">{kitchen.address ? `Pickup: ${kitchen.address}` : <span className="text-orange-700">No pickup address for riders yet</span>}</p>
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-xs font-bold text-primary">{kitchen.address ? "Edit pickup address" : "Add pickup address"}</summary>
+                      <div className="mt-2">
+                        <ActionForm action={setKitchenAddress.bind(null, kitchen.id)} submitLabel="Save address">
+                          <Field label="Pickup address"><input name="address" defaultValue={kitchen.address ?? ""} maxLength={300} className={fieldClass} placeholder="House, street, block" /></Field>
+                        </ActionForm>
+                      </div>
+                    </details>
                   </div>
                 ))}
               </div>
@@ -68,6 +77,7 @@ export default async function AdminChefsPage() {
                     <div className="grid gap-3 sm:grid-cols-2">
                       <Field label="Kitchen name"><input name="name" required className={fieldClass} placeholder="e.g. DHA kitchen" /></Field>
                       <Field label="Area (optional)"><input name="area" className={fieldClass} placeholder="e.g. DHA Phase 5" /></Field>
+                      <Field label="Pickup address (optional)" className="sm:col-span-2"><input name="address" maxLength={300} className={fieldClass} placeholder="House, street, block" /></Field>
                     </div>
                   </ActionForm>
                 </div>

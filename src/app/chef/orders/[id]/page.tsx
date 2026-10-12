@@ -5,8 +5,8 @@ import { requireChefPage } from "@/lib/auth/guards";
 import { getChefOrder } from "@/lib/orders/chef-queries";
 import { PageHeader } from "@/components/admin/ui";
 import { Panel, PanelTitle } from "@/components/orders/order-details";
-import { AssignmentBadge, OrderStatusBadge } from "@/components/orders/status-badges";
-import { ChefNextAction, CodNotice } from "@/components/chef/chef-order-card";
+import { LiveAssignmentBadge, LiveOrderBadge, OptimisticStatusProvider } from "@/components/orders/optimistic-status";
+import { ChefNextAction, ChefRiderInfo, CodNotice } from "@/components/chef/chef-order-card";
 import { ChefInactiveNotice } from "@/components/chef/inactive-notice";
 import { deliverySlotLabel, formatDateTime, formatDay } from "@/lib/orders/format";
 
@@ -25,6 +25,7 @@ export default async function ChefOrderDetailPage({ params }: { params: Promise<
   const mealCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
+    <OptimisticStatusProvider>
     <div className="space-y-6">
       <Link href="/chef/orders" className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:opacity-75">
         <ArrowLeft className="size-4" aria-hidden="true" />
@@ -36,13 +37,13 @@ export default async function ChefOrderDetailPage({ params }: { params: Promise<
         description={`${order.customerName.split(" ")[0]}${order.companyName ? ` · ${order.companyName}` : ""} · ${order.deliveryArea}, ${order.deliveryCity}`}
         actions={
           <div className="flex flex-wrap gap-2">
-            <OrderStatusBadge status={order.status} className="px-3 py-1.5 text-sm" />
-            {assignment ? <AssignmentBadge status={assignment.status} /> : null}
+            <LiveOrderBadge status={order.status} className="px-3 py-1.5 text-sm" />
+            {assignment ? <LiveAssignmentBadge status={assignment.status} /> : null}
           </div>
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <Panel>
           <PanelTitle icon={ShoppingBag}>What to prepare · {mealCount} meal{mealCount === 1 ? "" : "s"}</PanelTitle>
           <ul className="divide-y divide-border">
@@ -79,11 +80,15 @@ export default async function ChefOrderDetailPage({ params }: { params: Promise<
           <Panel>
             <PanelTitle icon={ClipboardList}>Next step</PanelTitle>
             <ChefNextAction order={order} />
+            <div className="mt-3">
+              <ChefRiderInfo order={order} />
+            </div>
             {["OUT_FOR_DELIVERY", "DELIVERED"].includes(order.status) ? <p className="text-sm text-muted">This order has left the kitchen. Thank you!</p> : null}
             {order.status === "CANCELLED" ? <p className="text-sm text-danger">This order was cancelled. Please don&rsquo;t prepare it.</p> : null}
           </Panel>
         </div>
       </div>
     </div>
+    </OptimisticStatusProvider>
   );
 }

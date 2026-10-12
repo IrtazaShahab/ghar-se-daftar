@@ -85,11 +85,11 @@ export function Td({ children, className }: { children?: React.ReactNode; classN
 }
 
 export const fieldClass =
-  "focus-ring h-11 w-full rounded-[14px] border border-border bg-white/85 px-3 text-sm transition hover:border-primary/30 focus:border-primary";
+  "focus-ring h-11 w-full min-w-0 rounded-[14px] border border-border bg-white/85 px-3 text-sm transition hover:border-primary/30 focus:border-primary";
 
 export function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
-    <label className={cn("grid gap-1.5 text-sm font-semibold", className)}>
+    <label className={cn("grid min-w-0 gap-1.5 text-sm font-semibold", className)}>
       {label}
       {children}
     </label>

@@ -14,7 +14,8 @@ export const orderDetailInclude = {
   chefAssignments: {
     orderBy: { assignedAt: "desc" },
     include: { homeChef: { select: { displayName: true } } }
-  }
+  },
+  delivery: { select: { riderId: true, status: true, issueNote: true } }
 } satisfies Prisma.OrderInclude;
 
 export type OrderWithDetails = Prisma.OrderGetPayload<{ include: typeof orderDetailInclude }>;

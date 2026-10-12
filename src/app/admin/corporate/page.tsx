@@ -56,7 +56,7 @@ export default async function AdminCorporatePage({ searchParams }: { searchParam
       <PageHeader title="Corporate requests" description="Review requests, contact the company, send a quotation and track it through to an active plan." />
 
       <form method="get" className="glass-card flex flex-wrap items-end gap-4 rounded-[22px] p-5">
-        <Field label="Search" className="min-w-[220px] flex-1">
+        <Field label="Search" className="min-w-0 flex-1 basis-56">
           <input name="q" defaultValue={q} placeholder="Reference, company, contact, email" className={fieldClass} />
         </Field>
         <Field label="Status">

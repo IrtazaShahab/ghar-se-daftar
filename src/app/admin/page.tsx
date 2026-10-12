@@ -54,8 +54,8 @@ export default async function AdminDashboardPage() {
         </div>
       </section>
 
-      <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-        <section className="space-y-4">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <section className="min-w-0 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-extrabold">Latest orders</h2>
             <Link href="/admin/orders" className="text-sm font-bold text-primary hover:underline">View all</Link>
@@ -100,7 +100,7 @@ export default async function AdminDashboardPage() {
                   ) : (
                     <p className="font-bold">{item.subject}</p>
                   )}
-                  {item.body ? <p className="text-xs text-muted">{item.body}</p> : null}
+                  {item.body ? <p className="text-xs text-muted wrap-anywhere">{item.body}</p> : null}
                   <p className="mt-0.5 text-xs text-muted">{formatDateTime(item.createdAt)}</p>
                 </li>
               ))}

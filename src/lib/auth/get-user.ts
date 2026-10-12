@@ -1,43 +1,40 @@
 import { cache } from "react";
 import { unstable_rethrow } from "next/navigation";
+import type { Prisma } from "@prisma/client";
 import { describeDbError, isTransientDbError, prisma } from "@/lib/db/prisma";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+
+const userInclude = {
+  profile: true,
+  // Only the latest few are ever shown (checkout defaults, profile page).
+  addresses: { orderBy: { createdAt: "desc" }, take: 3 }
+} satisfies Prisma.UserInclude;
 
 /**
  * Get the current Supabase-authenticated user with app profile data.
  * Cached per request, so layouts, pages and guards share one lookup.
+ *
+ * The session JWT is verified locally with getClaims() (signature + expiry
+ * against the project's cached ES256 public keys) instead of a network call to
+ * Supabase Auth on every request. Account status is still read from the
+ * database each time, so blocking a user takes effect immediately.
  */
 export const getCurrentUser = cache(async function getCurrentUser() {
   try {
     const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.auth.getUser();
+    const { data, error } = await supabase.auth.getClaims();
+    const claims = data?.claims;
 
-    if (error || !data.user) {
+    if (error || !claims?.sub) {
       return null;
     }
 
-    let user = await prisma.user.findUnique({
-      where: { id: data.user.id },
-      include: {
-        profile: true,
-        addresses: {
-          orderBy: { createdAt: "desc" }
-        }
-      }
-    });
+    let user = await prisma.user.findUnique({ where: { id: claims.sub }, include: userInclude });
 
     // Support profiles imported before Supabase Auth IDs were used as the
-    // Prisma primary key. Email is verified by the active Supabase session.
-    if (!user && data.user.email) {
-      user = await prisma.user.findUnique({
-        where: { email: data.user.email.toLowerCase() },
-        include: {
-          profile: true,
-          addresses: {
-            orderBy: { createdAt: "desc" }
-          }
-        }
-      });
+    // Prisma primary key. Email comes from the verified session token.
+    if (!user && typeof claims.email === "string" && claims.email) {
+      user = await prisma.user.findUnique({ where: { email: claims.email.toLowerCase() }, include: userInclude });
     }
 
     if (!user || user.status !== "ACTIVE") {

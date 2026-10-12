@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { PASSWORD_HINT, signupSchema, type SignupInput } from "@/lib/validations/auth";
 import { signup } from "@/app/actions/auth";
+import { clearNavUser } from "@/lib/auth/nav-session";
 import { Input } from "@/components/ui/input";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { LogoFull } from "@/components/brand/logo";
@@ -38,6 +39,7 @@ export default function SignupPage() {
       } else if (result.requiresEmailConfirmation) {
         setConfirmationSentTo(data.email);
       } else {
+        clearNavUser();
         router.replace("/");
         router.refresh();
       }

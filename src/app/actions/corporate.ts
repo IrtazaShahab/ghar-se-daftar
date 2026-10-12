@@ -8,6 +8,7 @@ import type { PaymentMethod } from "@prisma/client";
 import { prisma } from "@/lib/db/prisma";
 import { getAppUrl } from "@/lib/app-url";
 import { getCurrentUser } from "@/lib/auth/get-user";
+import { isOperationalStaff } from "@/lib/auth/roles";
 import { devRateLimit } from "@/lib/security/rate-limit";
 import { corporateRequestSchema, type CorporateRequestInput } from "@/lib/validations/corporate";
 import { generateCorporateReference, withUniqueReference } from "@/lib/orders/order-number";
@@ -43,6 +44,7 @@ export async function submitCorporateRequest(input: CorporateRequestInput): Prom
 
   try {
     const user = await getCurrentUser();
+    if (user && isOperationalStaff(user.role)) return { success: false, error: "Staff accounts can't submit customer requests. Please use a customer account." };
     const data = parsed.data;
     const request = await withUniqueReference("reference", generateCorporateReference, (reference) =>
       prisma.corporateRequest.create({

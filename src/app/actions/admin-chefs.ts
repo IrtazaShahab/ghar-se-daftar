@@ -76,14 +76,14 @@ export async function addKitchen(homeChefId: string, formData: FormData): Promis
   try {
     await requireAdminActor();
     const parsed = z
-      .object({ name: z.string().trim().min(2, "Enter a kitchen name.").max(80), area: optional(80) })
-      .safeParse({ name: field(formData, "name"), area: field(formData, "area") });
+      .object({ name: z.string().trim().min(2, "Enter a kitchen name.").max(80), area: optional(80), address: optional(300) })
+      .safeParse({ name: field(formData, "name"), area: field(formData, "area"), address: field(formData, "address") });
     if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
 
     const chef = await prisma.homeChef.findUnique({ where: { id: homeChefId }, select: { id: true } });
     if (!chef) return { ok: false, error: "Chef not found." };
 
-    await prisma.kitchen.create({ data: { homeChefId: chef.id, name: parsed.data.name, area: parsed.data.area, isApproved: true } });
+    await prisma.kitchen.create({ data: { homeChefId: chef.id, name: parsed.data.name, area: parsed.data.area, address: parsed.data.address, isApproved: true } });
     revalidatePath("/admin/chefs");
     return { ok: true, message: "Kitchen added." };
   } catch (error) {
@@ -104,5 +104,20 @@ export async function setChefActive(homeChefId: string, isActive: boolean): Prom
     return { ok: true, message: isActive ? "Chef activated." : "Chef deactivated." };
   } catch (error) {
     return actionError(error, "Set chef active");
+  }
+}
+
+/** Pickup address shown to the rider assigned to an order from this kitchen. */
+export async function setKitchenAddress(kitchenId: string, formData: FormData): Promise<ActionResult> {
+  try {
+    await requireAdminActor();
+    const parsed = optional(300).safeParse(field(formData, "address"));
+    if (!z.string().min(1).max(64).safeParse(kitchenId).success || !parsed.success) return { ok: false, error: "Enter a shorter address." };
+    const updated = await prisma.kitchen.updateMany({ where: { id: kitchenId }, data: { address: parsed.data } });
+    if (updated.count === 0) return { ok: false, error: "Kitchen not found." };
+    revalidatePath("/admin/chefs");
+    return { ok: true, message: "Pickup address saved." };
+  } catch (error) {
+    return actionError(error, "Set kitchen address");
   }
 }

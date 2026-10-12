@@ -1,5 +1,9 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // One SQL statement per query, even with nested includes (instead of one
+  // round trip per relation). Matters because every round trip to the pooler
+  // is slow; see docs/PERFORMANCE.md.
+  previewFeatures = ["relationJoins"]
 }
 
 datasource db {
@@ -21,6 +25,7 @@ enum UserRole {
   CUSTOMER
   CORPORATE_ADMIN
   HOME_CHEF
+  RIDER
   ADMIN
 }
 
@@ -87,6 +92,17 @@ enum NotificationAudience {
   ADMIN
   CHEF
   CORPORATE
+  RIDER
+}
+
+/// Rider side of an order's delivery. The order status stays the source of truth
+/// for the customer-facing lifecycle (READY → OUT_FOR_DELIVERY → DELIVERED).
+enum DeliveryStatus {
+  ASSIGNED
+  ACCEPTED
+  PICKED_UP
+  DELIVERED
+  CANCELLED
 }
 
 enum NotificationStatus {
@@ -121,26 +137,27 @@ enum PlanType {
 }
 
 model User {
-  id                String                @id @default(cuid())
-  email             String?               @unique
-  phone             String?               @unique
+  id                String               @id @default(cuid())
+  email             String?              @unique
+  phone             String?              @unique
   fullName          String
   passwordHash      String?
-  role              UserRole              @default(CUSTOMER)
-  status            UserStatus            @default(ACTIVE)
+  role              UserRole             @default(CUSTOMER)
+  status            UserStatus           @default(ACTIVE)
   emailVerified     DateTime?
-  createdAt         DateTime              @default(now())
-  updatedAt         DateTime              @updatedAt
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
   profile           Profile?
   addresses         Address[]
   subscriptions     Subscription[]
   orders            Order[]
-  auditLogs         AuditLog[]            @relation("AuditActor")
+  auditLogs         AuditLog[]           @relation("AuditActor")
   homeChef          HomeChef?
   statusChanges     OrderStatusHistory[]
   notifications     Notification[]
   corporateRequests CorporateRequest[]
   payments          Payment[]
+  rider             Rider?
 
   @@index([role])
   @@index([status])
@@ -242,6 +259,8 @@ model Kitchen {
   homeChefId        String
   name              String           @default("Home kitchen")
   area              String?
+  /// Pickup address shown to the assigned rider.
+  address           String?
   hygieneScore      Int?
   verificationNotes String?
   isApproved        Boolean          @default(false)
@@ -348,6 +367,9 @@ model Order {
   deliveryAddress     String
   deliveryArea        String
   deliveryCity        String               @default("Lahore")
+  /// Pin from the checkout map, when the customer chose one. Null for manual-only addresses.
+  deliveryLatitude    Float?
+  deliveryLongitude   Float?
   deliveryDate        DateTime
   deliverySlot        String?
   specialInstructions String?
@@ -599,15 +621,69 @@ model DeliveryZone {
   @@unique([city, area])
 }
 
+/// One delivery per order. Created when an admin assigns a rider.
 model Delivery {
-  id          String    @id @default(cuid())
-  orderId     String    @unique
-  riderName   String?
-  riderPhone  String?
-  pickupAt    DateTime?
-  deliveredAt DateTime?
-  notes       String?
-  order       Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  id               String         @id @default(cuid())
+  orderId          String         @unique
+  riderId          String?
+  status           DeliveryStatus @default(ASSIGNED)
+  /// Snapshot of the rider at assignment time, for records.
+  riderName        String?
+  riderPhone       String?
+  assignedById     String?
+  assignedAt       DateTime?
+  acceptedAt       DateTime?
+  pickupAt         DateTime?
+  deliveredAt      DateTime?
+  cancelledAt      DateTime?
+  notes            String?
+  issueNote        String?
+  issueReportedAt  DateTime?
+  /// Live location: only the latest point is kept, only while the rider has
+  /// consented and the delivery is active. Cleared when it ends.
+  sharingStartedAt DateTime?
+  lastLatitude     Float?
+  lastLongitude    Float?
+  lastAccuracyM    Float?
+  lastLocationAt   DateTime?
+  order            Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  rider            Rider?         @relation(fields: [riderId], references: [id], onDelete: SetNull)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @default(now()) @updatedAt
+
+  @@index([riderId, status])
+  @@index([status])
+}
+
+/// A delivery rider. Linked to a login account (role RIDER) by an admin.
+model Rider {
+  id          String     @id @default(cuid())
+  userId      String?    @unique
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  displayName String
+  phone       String
+  isActive    Boolean    @default(true)
+  deliveries  Delivery[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([isActive])
+}
+
+/// Delivery windows offered at checkout. Times are Pakistan time ("HH:MM").
+/// Same-day orders for a window close `cutoffMinutes` before it starts.
+model ServiceWindow {
+  id            String   @id @default(cuid())
+  key           String   @unique
+  label         String
+  startTime     String
+  endTime       String
+  slotMinutes   Int      @default(60)
+  cutoffMinutes Int      @default(90)
+  isActive      Boolean  @default(true)
+  sortOrder     Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Complaint {

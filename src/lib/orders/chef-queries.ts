@@ -23,11 +23,14 @@ export const chefOrderSelect = {
   createdAt: true,
   assignedKitchen: { select: { name: true } },
   items: { orderBy: { id: "asc" }, select: { id: true, itemName: true, itemDetails: true, serviceDay: true, quantity: true } },
+  updatedAt: true,
   chefAssignments: {
     orderBy: { assignedAt: "desc" },
     take: 1,
     select: { id: true, homeChefId: true, status: true, note: true, assignedAt: true, acceptedAt: true }
-  }
+  },
+  // Operational pickup status only: rider name, never their phone or location.
+  delivery: { select: { status: true, pickupAt: true, riderName: true, rider: { select: { displayName: true } } } }
 } satisfies Prisma.OrderSelect;
 
 export type ChefOrder = Prisma.OrderGetPayload<{ select: typeof chefOrderSelect }>;
@@ -96,4 +99,38 @@ export async function getChefTabCounts(chefId: string): Promise<Record<ChefTab, 
 /** A single order, only if it is currently assigned to this chef. */
 export async function getChefOrder(chefId: string, orderId: string) {
   return prisma.order.findFirst({ where: { id: orderId, assignedChefId: chefId }, select: chefOrderSelect });
+}
+
+/** Which kitchen tab an order belongs in (same rules as tabWhere). */
+export function chefTabFor(order: Pick<ChefOrder, "status" | "chefAssignments">, chefId: string): ChefTab {
+  const assignment = order.chefAssignments[0];
+  const mine = assignment && assignment.homeChefId === chefId ? assignment.status : null;
+  if (["OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"].includes(order.status)) return "completed";
+  if (order.status === "READY") return "ready";
+  if (mine === "ASSIGNED") return "new";
+  if (order.status === "PREPARING") return "preparing";
+  return "accepted";
+}
+
+/**
+ * Every tab's orders in one round trip, so switching tabs needs no request:
+ * open orders plus the last two weeks of completed ones.
+ */
+export async function getChefBoard(chefId: string) {
+  const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
+  const orders = await prisma.order.findMany({
+    where: {
+      assignedChefId: chefId,
+      OR: [{ status: { in: ["PENDING", "CONFIRMED", "PREPARING", "READY"] } }, { status: { in: ["OUT_FOR_DELIVERY", "DELIVERED", "CANCELLED"] }, updatedAt: { gte: since } }]
+    },
+    orderBy: [{ deliveryDate: "asc" }, { createdAt: "asc" }],
+    take: 250,
+    select: chefOrderSelect
+  });
+
+  const byTab = Object.fromEntries(CHEF_TABS.map((tab) => [tab, [] as ChefOrder[]])) as Record<ChefTab, ChefOrder[]>;
+  for (const order of orders) byTab[chefTabFor(order, chefId)].push(order);
+  byTab.completed.sort((a, b) => b.updatedAt.getTime() - a.updatedAt.getTime());
+  byTab.completed = byTab.completed.slice(0, 50);
+  return byTab;
 }

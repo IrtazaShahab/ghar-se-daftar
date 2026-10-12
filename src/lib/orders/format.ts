@@ -1,4 +1,5 @@
 import type { PaymentMethod, PaymentStatus } from "@prisma/client";
+import { formatSlotLabel } from "./service-windows";
 
 /** Display helpers shared by pages and emails. Amounts are whole PKR. */
 
@@ -39,12 +40,7 @@ export const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   CANCELLED: "Cancelled"
 };
 
-export const DELIVERY_SLOTS = [
-  { value: "12:00-12:30", label: "12:00 PM – 12:30 PM" },
-  { value: "12:30-13:00", label: "12:30 PM – 1:00 PM" },
-  { value: "13:00-13:30", label: "1:00 PM – 1:30 PM" }
-] as const;
-
+/** Works for any stored "HH:MM-HH:MM" slot, including ones from before delivery windows. */
 export function deliverySlotLabel(value: string | null | undefined) {
-  return DELIVERY_SLOTS.find((slot) => slot.value === value)?.label ?? value ?? "Not specified";
+  return formatSlotLabel(value);
 }

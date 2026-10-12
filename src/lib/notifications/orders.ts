@@ -109,3 +109,15 @@ export async function notifyChefAssigned(orderId: string, chefUserId: string | n
     orderId
   });
 }
+
+export async function notifyRiderAssigned(orderId: string, riderUserId: string | null, orderNumber: string) {
+  if (!riderUserId) return;
+  await createInAppNotification({
+    type: "RIDER_DELIVERY_ASSIGNED",
+    audience: "RIDER",
+    subject: `New delivery ${orderNumber} assigned to you`,
+    dedupeKey: `order:${orderId}:rider-assigned:${riderUserId}:${Date.now()}`,
+    userId: riderUserId,
+    orderId
+  });
+}

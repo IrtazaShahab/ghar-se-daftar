@@ -1,4 +1,4 @@
-import { getCurrentUser } from "@/lib/auth/get-user";
+import { requireCustomerPage } from "@/lib/auth/guards";
 import { prisma } from "@/lib/db/prisma";
 import { Card } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { UtensilsCrossed, CalendarDays, MapPin } from "lucide-react";
 export const metadata = { title: "My Subscriptions" };
 
 export default async function SubscriptionsPage() {
-  const user = (await getCurrentUser())!;
+  const user = await requireCustomerPage("/dashboard/customer/subscriptions");
   const subscriptions = await prisma.subscription.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, include: { items: { where: { serviceDate: { gte: new Date() } }, orderBy: { serviceDate: "asc" }, take: 3, include: { menuOption: true } } } });
   return <div className="space-y-8"><CustomerPageHeader title="Subscriptions" description="Review your meal plans and upcoming scheduled meals." />
     {subscriptions.length ? <div className="grid gap-5">{subscriptions.map((subscription) => <Card key={subscription.id}>

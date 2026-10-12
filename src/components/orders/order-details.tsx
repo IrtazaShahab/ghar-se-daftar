@@ -29,7 +29,7 @@ export function OrderItemsTable({ order, showUnitPrice = true }: { order: ItemsO
         {order.items.map((item) => (
           <li key={item.id} className="flex items-start justify-between gap-4 py-3 text-sm first:pt-0">
             <div className="min-w-0">
-              <p className="font-bold">{item.itemName}</p>
+              <p className="font-bold wrap-break-word">{item.itemName}</p>
               <p className="text-xs text-muted">
                 {[item.serviceDay, item.itemDetails].filter(Boolean).join(" · ")}
               </p>
@@ -76,12 +76,12 @@ export function PaymentSummary({ order }: { order: Pick<OrderWithDetails, "payme
 
 export function DeliverySummary({ order }: { order: Pick<OrderWithDetails, "deliveryAddress" | "deliveryArea" | "deliveryCity" | "deliveryDate" | "deliverySlot" | "companyName" | "specialInstructions"> }) {
   return (
-    <dl className="grid gap-4 text-sm sm:grid-cols-2">
+    <dl className="grid gap-4 text-sm sm:grid-cols-2 [&>*]:min-w-0">
       <div className="sm:col-span-2">
         <dt className="text-xs text-muted">Delivery address</dt>
         <dd className="mt-1 flex items-start gap-2 font-semibold">
           <MapPin className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden="true" />
-          <span>
+          <span className="min-w-0 wrap-anywhere">
             {order.companyName ? <>{order.companyName}<br /></> : null}
             {order.deliveryAddress}<br />
             {order.deliveryArea}, {order.deliveryCity}
@@ -91,7 +91,7 @@ export function DeliverySummary({ order }: { order: Pick<OrderWithDetails, "deli
       <div><dt className="text-xs text-muted">First delivery day</dt><dd className="mt-1 font-semibold">{formatDay(order.deliveryDate)}</dd></div>
       <div><dt className="text-xs text-muted">Preferred time</dt><dd className="mt-1 font-semibold">{deliverySlotLabel(order.deliverySlot)}</dd></div>
       {order.specialInstructions ? (
-        <div className="sm:col-span-2"><dt className="text-xs text-muted">Instructions</dt><dd className="mt-1 font-semibold">{order.specialInstructions}</dd></div>
+        <div className="sm:col-span-2"><dt className="text-xs text-muted">Instructions</dt><dd className="mt-1 font-semibold wrap-anywhere">{order.specialInstructions}</dd></div>
       ) : null}
     </dl>
   );

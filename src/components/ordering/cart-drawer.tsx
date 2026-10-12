@@ -1,7 +1,6 @@
 "use client";
 
 import { useCart } from "@/store/cart";
-import { Button } from "@/components/ui/button";
 import { WhatsAppButton } from "@/components/ui/whatsapp-button";
 import { X, Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
 import { formatCurrencyPKR } from "@/lib/utils";
@@ -64,12 +63,13 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             aria-modal="true"
             aria-label="Shopping cart"
             aria-hidden={!isOpen}
-            className={`fixed right-0 top-0 z-50 h-screen w-full overflow-y-auto bg-background md:max-w-md lg:right-4 lg:top-20 lg:h-[calc(100vh-6rem)] lg:w-96 lg:rounded-[28px] lg:border lg:border-border lg:shadow-xl transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none ${
+            inert={!isOpen}
+            className={`fixed right-0 top-0 z-50 flex h-dvh w-full max-w-full flex-col overflow-hidden bg-background md:max-w-md lg:right-4 lg:top-20 lg:h-[calc(100dvh-6rem)] lg:w-96 lg:rounded-[28px] lg:border lg:border-border lg:shadow-xl transition-[transform,opacity] duration-300 ease-out motion-reduce:transition-none ${
               isOpen ? "translate-x-0 opacity-100" : "pointer-events-none translate-x-full opacity-0"
             }`}
           >
             {/* Header */}
-            <div className="sticky top-0 flex items-center justify-between border-b border-border bg-background/95 p-6 backdrop-blur-sm">
+            <div className="flex shrink-0 items-center justify-between border-b border-border bg-background/95 px-5 py-4 sm:p-6">
               <div className="flex items-center gap-3">
                 <ShoppingBag className="size-5 text-primary" />
                 <h2 className="font-serif text-xl font-semibold">Your Cart</h2>
@@ -84,10 +84,10 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
             </div>
 
             {/* Content */}
-            <div className="flex flex-col h-full">
+            <div className="flex min-h-0 flex-1 flex-col">
               {isEmpty ? (
                 // Empty State
-                <div className="flex flex-col items-center justify-center py-16 px-6 flex-1">
+                <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 py-16" data-lenis-prevent>
                   <div className="mb-4 rounded-full bg-primary/10 p-4">
                     <ShoppingBag className="size-8 text-primary" />
                   </div>
@@ -100,11 +100,11 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
               ) : (
                 <>
                   {/* Items List */}
-                  <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
+                  <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-5 sm:px-6" data-lenis-prevent>
                     {state.items.map((item) => (
                       <div
                         key={item.id}
-                        className="glass-card rounded-[20px] p-4 flex gap-4"
+                        className="glass-card flex min-w-0 gap-3 rounded-[20px] p-3 sm:gap-4 sm:p-4"
                       >
                         {/* Image */}
                         <div className="relative w-16 h-16 rounded-[16px] overflow-hidden flex-shrink-0">
@@ -115,14 +115,14 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                         <div className="flex-1 min-w-0">
                           <h4 className="font-semibold text-sm line-clamp-1">{item.name}</h4>
                           <p className="text-xs text-muted">{item.day}</p>
-                          <p className="text-xs text-muted mt-1">{item.items}</p>
+                          <p className="mt-1 line-clamp-2 text-xs text-muted wrap-anywhere">{item.items}</p>
                           <div className="mt-2 font-semibold text-primary">
                             {formatCurrencyPKR(item.price).replace("PKR", "Rs.")}
                           </div>
                         </div>
 
                         {/* Quantity Controls */}
-                        <div className="flex flex-col items-end gap-2">
+                        <div className="flex shrink-0 flex-col items-end gap-2">
                           <div className="flex items-center gap-2 bg-card rounded-full p-1">
                             <button
                               onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
@@ -155,7 +155,7 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   </div>
 
                   {/* Order Summary */}
-                  <div className="border-t border-border px-6 py-6 space-y-3 bg-white/50">
+                  <div className="shrink-0 space-y-2 border-t border-border bg-white/50 px-5 py-4 sm:space-y-3 sm:px-6">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted">Subtotal</span>
                       <span className="font-semibold">{formatCurrencyPKR(subtotal).replace("PKR", "Rs.")}</span>
@@ -178,11 +178,9 @@ export function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   </div>
 
                   {/* Checkout Buttons */}
-                  <div className="border-t border-border px-6 py-4 space-y-3">
-                    <Link href="/checkout" onClick={onClose} className="w-full block">
-                      <Button className="w-full" variant="primary">
-                        Proceed to Checkout
-                      </Button>
+                  <div className="shrink-0 space-y-3 border-t border-border px-5 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-6">
+                    <Link href="/checkout" onClick={onClose} className="focus-ring flex h-[52px] w-full items-center justify-center rounded-full bg-primary px-6 text-sm font-extrabold text-white shadow-lg shadow-primary/15 transition hover:bg-[#183f28]">
+                      Proceed to Checkout
                     </Link>
                     <WhatsAppButton
                       variant="inline"

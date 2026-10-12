@@ -7,7 +7,9 @@ import { LogoFull } from "@/components/brand/logo";
 import { LayoutDashboard, LogOut, Menu, Settings, ShoppingBag, User, UtensilsCrossed, X } from "lucide-react";
 import { useCart } from "@/store/cart";
 import { useCartDrawer } from "@/components/providers/root-providers";
-import { getCurrentUser, logout } from "@/app/actions/auth";
+import { logout } from "@/app/actions/auth";
+import { clearNavUser, getNavUser } from "@/lib/auth/nav-session";
+import { hidesCustomerOrdering, homePathForRole, isOperationalStaff } from "@/lib/auth/roles";
 import { useEffect, useRef, useState } from "react";
 
 const links = [
@@ -18,6 +20,11 @@ const links = [
   { label: "FAQ", href: "/#faq" }
 ];
 
+/**
+ * Public site header. Signed-in chef and rider accounts don't use the customer
+ * site: they are sent back to their portal (ordering routes also redirect them
+ * on the server), and staff never see cart, plan or ordering controls.
+ */
 export function MarketingNav() {
   const router = useRouter();
   const { state } = useCart();
@@ -31,11 +38,12 @@ export function MarketingNav() {
   useEffect(() => {
     let isMounted = true;
 
-    getCurrentUser()
+    getNavUser()
       .then((user) => {
         if (isMounted) {
           setIsAuthenticated(Boolean(user));
           setRole(user?.role ?? null);
+          if (user && isOperationalStaff(user.role)) router.replace(homePathForRole(user.role));
         }
       })
       .catch(() => {
@@ -45,7 +53,7 @@ export function MarketingNav() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (activeOverlay !== "profile") return;
@@ -67,12 +75,18 @@ export function MarketingNav() {
     ? [{ label: "Admin", href: "/admin", Icon: LayoutDashboard }, { label: "Orders", href: "/admin/orders", Icon: ShoppingBag }]
     : role === "HOME_CHEF"
       ? [{ label: "Kitchen", href: "/chef", Icon: LayoutDashboard }, { label: "Orders", href: "/chef/orders", Icon: ShoppingBag }]
-      : [
+      : role === "RIDER"
+        ? [{ label: "Deliveries", href: "/rider", Icon: LayoutDashboard }]
+        : [
           { label: "Dashboard", href: "/dashboard/customer", Icon: LayoutDashboard },
           { label: "Orders", href: "/dashboard/customer/orders", Icon: ShoppingBag },
           { label: "Subscriptions", href: "/dashboard/customer/subscriptions", Icon: UtensilsCrossed },
           { label: "Settings", href: "/dashboard/customer/settings", Icon: Settings }
         ];
+
+  const staff = isOperationalStaff(role);
+  const showOrdering = !hidesCustomerOrdering(role);
+  const navLinks = staff ? [] : links;
 
   const handleLogout = async () => {
     if (isLoggingOut) return;
@@ -81,6 +95,7 @@ export function MarketingNav() {
     const result = await logout();
 
     if (result.success) {
+      clearNavUser();
       setIsAuthenticated(false);
       setRole(null);
       closeOverlay();
@@ -93,12 +108,12 @@ export function MarketingNav() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/45 bg-[#f6f0e4]/86 backdrop-blur-xl">
       <nav className="container-gsd flex h-20 items-center justify-between">
-        <Link href="/" className="group">
+        <Link href={staff && role ? homePathForRole(role) : "/"} className="group">
           <LogoFull size="sm" />
         </Link>
 
-        <div className="hidden items-center gap-7 rounded-full border border-border/80 bg-white/55 px-6 py-3 shadow-sm md:flex">
-          {links.map((link) => (
+        <div className={`hidden items-center gap-7 rounded-full border border-border/80 bg-white/55 px-6 py-3 shadow-sm ${navLinks.length ? "md:flex" : ""}`}>
+          {navLinks.map((link) => (
             <Link key={link.href} href={link.href} className="nav-link text-sm font-bold text-primary/75">
               <span>{link.label}</span>
             </Link>
@@ -106,6 +121,7 @@ export function MarketingNav() {
         </div>
 
         <div className="flex items-center gap-3">
+          {showOrdering ? (
           <button
             onClick={openCart}
             className="focus-ring nav-icon-button relative grid size-11 place-items-center rounded-full border border-border bg-white/70 hover:border-primary/20 hover:bg-white"
@@ -118,6 +134,7 @@ export function MarketingNav() {
               </span>
             )}
           </button>
+          ) : null}
           {isAuthenticated ? (
             <div className="relative hidden md:block">
               <div ref={accountMenuRef}>
@@ -132,7 +149,7 @@ export function MarketingNav() {
           ) : isAuthenticated === false ? (
             <ButtonLink href="/login" variant="secondary" className="hidden md:inline-flex">Login</ButtonLink>
           ) : null}
-          <ButtonLink href="/subscribe" className="hidden md:inline-flex">Start Plan</ButtonLink>
+          {showOrdering ? <ButtonLink href="/subscribe" className="hidden md:inline-flex">Start Plan</ButtonLink> : null}
           <button
             className="focus-ring grid size-11 place-items-center rounded-full bg-primary text-white md:hidden"
             onClick={() => toggleOverlay("mobile-menu")}
@@ -147,7 +164,7 @@ export function MarketingNav() {
       {activeOverlay === "mobile-menu" ? (
         <div className="border-t border-border/70 bg-card/96 px-4 py-5 shadow-2xl shadow-primary/10 md:hidden">
           <div className="mx-auto grid max-w-sm gap-2">
-            {links.map((link) => (
+            {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
@@ -177,7 +194,7 @@ export function MarketingNav() {
               ) : isAuthenticated === false ? (
                   <ButtonLink href="/login" variant="secondary" onClick={closeOverlay}>Login</ButtonLink>
               ) : null}
-              <ButtonLink href="/subscribe" onClick={closeOverlay}>Start Plan</ButtonLink>
+              {showOrdering ? <ButtonLink href="/subscribe" onClick={closeOverlay}>Start Plan</ButtonLink> : null}
             </div>
           </div>
         </div>
