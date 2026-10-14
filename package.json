@@ -13,7 +13,8 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "seed": "tsx prisma/seed.ts",
-    "email:test": "tsx scripts/email-test.ts"
+    "email:test": "tsx scripts/email-test.ts",
+    "test": "tsx --test \"tests/**/*.test.ts\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.3.0",

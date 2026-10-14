@@ -4,6 +4,8 @@ import { getCurrentUser } from "@/lib/auth/get-user";
 import { priceCart, type PricedLine } from "@/lib/orders/cart";
 import { createOrder, type PlaceOrderResult } from "@/lib/orders/create-order";
 import type { OrderTotals } from "@/lib/orders/pricing";
+import { describeCutoffs, getDeliveryOptions, type DeliverySlotOption } from "@/lib/orders/service-windows";
+import { getServiceWindows } from "@/lib/orders/service-windows-db";
 import { getPaymentMethodOptions, type PaymentMethodOption } from "@/lib/payments/policy";
 import { devRateLimit } from "@/lib/security/rate-limit";
 import { cartLinesSchema, placeOrderSchema, type CartLineInput, type PlaceOrderInput } from "@/lib/validations/checkout";
@@ -15,6 +17,12 @@ export type CheckoutQuote =
       unavailableIds: string[];
       totals: OrderTotals;
       paymentOptions: PaymentMethodOption[];
+      delivery: {
+        firstDeliveryDate: string;
+        isToday: boolean;
+        slots: DeliverySlotOption[];
+        cutoffNote: string;
+      };
     }
   | { success: false; error: string };
 
@@ -27,13 +35,20 @@ export async function getCheckoutQuote(items: CartLineInput[]): Promise<Checkout
   if (!parsed.success) return { success: false, error: parsed.error.issues[0]?.message ?? "Your cart couldn't be read." };
 
   try {
-    const cart = await priceCart(parsed.data);
+    const [cart, windows] = await Promise.all([priceCart(parsed.data), getServiceWindows()]);
+    const delivery = getDeliveryOptions(cart.lines.map((line) => line.day), windows);
     return {
       success: true,
       lines: cart.lines,
       unavailableIds: cart.unavailableIds,
       totals: cart.totals,
-      paymentOptions: getPaymentMethodOptions({ orderType: "STANDARD", total: cart.totals.total })
+      paymentOptions: getPaymentMethodOptions({ orderType: "STANDARD", total: cart.totals.total }),
+      delivery: {
+        firstDeliveryDate: delivery.firstDeliveryDate.toISOString(),
+        isToday: delivery.isToday,
+        slots: delivery.slots,
+        cutoffNote: describeCutoffs(windows)
+      }
     };
   } catch (error) {
     console.error("Checkout quote error:", error instanceof Error ? error.message : error);

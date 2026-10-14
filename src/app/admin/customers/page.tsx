@@ -65,7 +65,7 @@ export default async function AdminCustomersPage({ searchParams }: { searchParam
       <PageHeader title="Customers" description={`${total} customer account${total === 1 ? "" : "s"}.`} />
 
       <form method="get" className="glass-card flex flex-wrap items-end gap-4 rounded-[22px] p-5">
-        <Field label="Search" className="min-w-[240px] flex-1">
+        <Field label="Search" className="min-w-0 flex-1 basis-60">
           <input name="q" defaultValue={q} placeholder="Name, email, phone or company" className={fieldClass} />
         </Field>
         <button type="submit" className="focus-ring inline-flex h-11 items-center rounded-full bg-primary px-6 text-sm font-extrabold text-white hover:bg-[#183f28]">Search</button>

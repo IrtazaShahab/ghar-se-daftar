@@ -15,7 +15,8 @@ import { generateWhatsAppOrderMessage } from "@/lib/order";
 import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
 import { getCheckoutQuote, placeOrder, type CheckoutQuote } from "@/app/actions/order";
 import { checkoutDetailsSchema, type CheckoutDetailsInput, type CustomerPaymentMethod } from "@/lib/validations/checkout";
-import { DELIVERY_SLOTS, formatDeliveryFee, formatRs } from "@/lib/orders/format";
+import { deliverySlotLabel, formatDay, formatDeliveryFee, formatRs } from "@/lib/orders/format";
+import { AddressPicker } from "./address-picker";
 import { FREE_DELIVERY_MESSAGE, amountToFreeDelivery } from "@/lib/orders/pricing";
 import { cn } from "@/lib/utils";
 
@@ -27,8 +28,14 @@ export type CheckoutDefaults = {
   company: string;
   area: string;
   address: string;
+  city: string;
+  latitude: number | null;
+  longitude: number | null;
   instructions: string;
 };
+
+/** Delivery cutoffs move on while the page is open; refresh the slots this often. */
+const QUOTE_REFRESH_MS = 5 * 60_000;
 
 const PAYMENT_ICONS: Record<CustomerPaymentMethod, typeof Banknote> = {
   EASYPAISA: Smartphone,
@@ -70,6 +77,14 @@ export function CheckoutForm({ defaults }: { defaults: CheckoutDefaults }) {
 
   const cartLines = useMemo(() => items.map((item) => ({ menuOptionId: item.menuOptionId, quantity: item.quantity })), [items]);
   const cartSignature = JSON.stringify(cartLines);
+  const [quoteTick, setQuoteTick] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") setQuoteTick((tick) => tick + 1);
+    }, QUOTE_REFRESH_MS);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     if (cartLines.length === 0) return;
@@ -83,9 +98,9 @@ export function CheckoutForm({ defaults }: { defaults: CheckoutDefaults }) {
     return () => {
       cancelled = true;
     };
-    // cartSignature captures every change to ids/quantities.
+    // cartSignature captures every change to ids/quantities; quoteTick refreshes slots.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cartSignature]);
+  }, [cartSignature, quoteTick]);
 
   const {
     register,
@@ -102,6 +117,9 @@ export function CheckoutForm({ defaults }: { defaults: CheckoutDefaults }) {
       company: defaults.company,
       area: defaults.area,
       address: defaults.address,
+      city: defaults.city,
+      latitude: defaults.latitude,
+      longitude: defaults.longitude,
       instructions: defaults.instructions,
       deliverySlot: "",
       paymentMethod: "COD"
@@ -114,6 +132,20 @@ export function CheckoutForm({ defaults }: { defaults: CheckoutDefaults }) {
   const paymentOptions = useMemo(() => (quote?.success ? quote.paymentOptions : []), [quote]);
   const unavailableIds = useMemo(() => (quote?.success ? quote.unavailableIds : []), [quote]);
   const totals = quote?.success ? quote.totals : null;
+  const delivery = quote?.success ? quote.delivery : null;
+  const slots = useMemo(() => delivery?.slots ?? [], [delivery]);
+  const slotGroups = useMemo(() => {
+    const groups = new Map<string, typeof slots>();
+    for (const slot of slots) groups.set(slot.windowLabel, [...(groups.get(slot.windowLabel) ?? []), slot]);
+    return [...groups.entries()];
+  }, [slots]);
+  const pin = typeof watched.latitude === "number" && typeof watched.longitude === "number" ? { lat: watched.latitude, lng: watched.longitude } : null;
+
+  // A slot that is no longer offered (cutoff passed, window switched off) is cleared, never submitted.
+  useEffect(() => {
+    if (!delivery || !watched.deliverySlot) return;
+    if (!slots.some((slot) => slot.value === watched.deliverySlot)) setValue("deliverySlot", "");
+  }, [delivery, slots, watched.deliverySlot, setValue]);
 
   // If the selected method becomes unavailable, fall back to COD.
   useEffect(() => {
@@ -142,7 +174,7 @@ export function CheckoutForm({ defaults }: { defaults: CheckoutDefaults }) {
   }
 
   const selectedOption = paymentOptions.find((option) => option.method === selectedMethod);
-  const canSubmit = Boolean(totals) && unavailableIds.length === 0 && !isQuoting && !isSubmitting && Boolean(selectedOption?.available);
+  const canSubmit = Boolean(totals) && slots.length > 0 && unavailableIds.length === 0 && !isQuoting && !isSubmitting && Boolean(selectedOption?.available);
 
   const onSubmit = async (data: CheckoutDetailsInput) => {
     if (isSubmitting || !canSubmit) return;
@@ -163,7 +195,8 @@ export function CheckoutForm({ defaults }: { defaults: CheckoutDefaults }) {
       }
 
       setError(result.error);
-      if (result.unavailableItemIds?.length) setQuote(await getCheckoutQuote(cartLines));
+      if (result.slotUnavailable) setValue("deliverySlot", "");
+      if (result.unavailableItemIds?.length || result.slotUnavailable) setQuote(await getCheckoutQuote(cartLines));
     } catch {
       setError("We couldn't reach our servers. Check your connection and try again.");
     }
@@ -180,7 +213,7 @@ export function CheckoutForm({ defaults }: { defaults: CheckoutDefaults }) {
       company: watched.company ?? "",
       area: watched.area ?? "",
       address: watched.address ?? "",
-      deliverySlot: watched.deliverySlot ?? "",
+      deliverySlot: watched.deliverySlot ? deliverySlotLabel(watched.deliverySlot) : "",
       instructions: watched.instructions ?? ""
     },
     totals?.subtotal ?? 0,
@@ -209,7 +242,7 @@ export function CheckoutForm({ defaults }: { defaults: CheckoutDefaults }) {
               return (
                 <li key={item.id} className={cn("flex justify-between gap-3 text-sm", unavailable && "opacity-60")}>
                   <div className="min-w-0">
-                    <p className="font-semibold">{line?.name ?? item.name}</p>
+                    <p className="font-semibold wrap-break-word">{line?.name ?? item.name}</p>
                     <p className="text-xs text-muted">
                       {line?.day ?? item.day} · {item.quantity} × {formatRs(line?.unitPrice ?? item.price)}
                     </p>
@@ -266,7 +299,7 @@ export function CheckoutForm({ defaults }: { defaults: CheckoutDefaults }) {
   );
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
+    <div className="grid min-w-0 gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
       <div className="min-w-0">
         <Link href="/menu" className="mb-8 inline-flex items-center gap-2 text-primary transition hover:opacity-75">
           <ArrowLeft className="size-4" />
@@ -295,35 +328,71 @@ export function CheckoutForm({ defaults }: { defaults: CheckoutDefaults }) {
 
           <section className="glass-card rounded-[28px] p-6">
             <SectionTitle step={2} icon={Building2}>Delivery address</SectionTitle>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Input label="Company / office (optional)" autoComplete="organization" placeholder="Your company name" {...register("company")} error={errors.company?.message} disabled={isSubmitting} />
-              <Input label="Delivery area" placeholder="e.g. Gulberg, Johar Town" {...register("area")} error={errors.area?.message} disabled={isSubmitting} required />
-              <div className="sm:col-span-2">
-                <Textarea label="Full office address" autoComplete="street-address" placeholder="Building, floor, office number, street" {...register("address")} error={errors.address?.message} disabled={isSubmitting} />
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2">
+              <div className="min-w-0 sm:col-span-2">
+                <AddressPicker
+                  pin={pin}
+                  disabled={isSubmitting}
+                  onPick={(place) => {
+                    setValue("address", place.address, { shouldValidate: true, shouldDirty: true });
+                    if (place.area) setValue("area", place.area, { shouldValidate: true, shouldDirty: true });
+                    setValue("city", place.city ?? "Lahore", { shouldDirty: true });
+                    setValue("latitude", place.latitude, { shouldDirty: true });
+                    setValue("longitude", place.longitude, { shouldDirty: true });
+                  }}
+                  onPinMove={(point) => {
+                    setValue("latitude", point.lat, { shouldDirty: true });
+                    setValue("longitude", point.lng, { shouldDirty: true });
+                  }}
+                  onClearPin={() => {
+                    setValue("latitude", null, { shouldDirty: true });
+                    setValue("longitude", null, { shouldDirty: true });
+                  }}
+                />
               </div>
-              <div className="grid gap-2 sm:col-span-2">
+              <Input label="Company / office (optional)" autoComplete="organization" placeholder="Your company name" {...register("company")} error={errors.company?.message} disabled={isSubmitting} />
+              <Input label="Delivery area" autoComplete="address-level3" placeholder="e.g. Gulberg, Johar Town" {...register("area")} error={errors.area?.message} disabled={isSubmitting} required />
+              <div className="min-w-0 sm:col-span-2">
+                <Textarea label="Full office address" autoComplete="street-address" placeholder="Building, floor, office number, street" {...register("address")} error={errors.address?.message} disabled={isSubmitting} />
+                {pin ? <p className="mt-1 text-xs text-muted">You can edit the text; your pinned location is kept. Remove the pin if you change to a different place.</p> : null}
+              </div>
+              <div className="grid min-w-0 gap-2 sm:col-span-2">
                 <label htmlFor="deliverySlot" className="flex items-center gap-2 text-sm font-semibold">
                   <Clock className="size-4 text-primary" aria-hidden="true" />
                   Preferred delivery time
                 </label>
+                {delivery ? (
+                  <p className="text-xs text-muted">
+                    {delivery.isToday ? "First delivery today" : "First delivery"}: <strong className="text-foreground">{formatDay(new Date(delivery.firstDeliveryDate))}</strong>
+                  </p>
+                ) : null}
                 <select
                   id="deliverySlot"
                   {...register("deliverySlot")}
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || !delivery || slots.length === 0}
                   className={cn(
-                    "focus-ring h-[52px] w-full rounded-[18px] border border-border bg-white/85 px-4 text-sm transition hover:border-primary/30 focus:border-primary",
+                    "focus-ring h-[52px] w-full min-w-0 rounded-[18px] border border-border bg-white/85 px-4 text-sm transition hover:border-primary/30 focus:border-primary disabled:opacity-60",
                     errors.deliverySlot && "border-danger bg-danger/5"
                   )}
                 >
-                  <option value="">Select a time</option>
-                  {DELIVERY_SLOTS.map((slot) => (
-                    <option key={slot.value} value={slot.value}>{slot.label}</option>
+                  <option value="">{!delivery ? "Loading delivery times…" : slots.length === 0 ? "No delivery times available" : "Select a time"}</option>
+                  {slotGroups.map(([label, group]) => (
+                    <optgroup key={label} label={label}>
+                      {group.map((slot) => (
+                        <option key={slot.value} value={slot.value}>{slot.label}</option>
+                      ))}
+                    </optgroup>
                   ))}
                 </select>
                 {errors.deliverySlot ? <span className="text-xs font-semibold text-danger">{errors.deliverySlot.message}</span> : null}
-                <span className="text-xs text-muted">Each meal is delivered on its menu day. Same-day orders are accepted until 10:30 AM.</span>
+                {delivery && slots.length === 0 ? (
+                  <span className="text-xs font-semibold text-danger">No delivery times can be booked right now. Please contact us on WhatsApp.</span>
+                ) : null}
+                <span className="text-xs text-muted">
+                  Each meal is delivered on its menu day.{delivery?.cutoffNote ? ` Same-day orders: ${delivery.cutoffNote}.` : ""}
+                </span>
               </div>
-              <div className="sm:col-span-2">
+              <div className="min-w-0 sm:col-span-2">
                 <Textarea label="Delivery instructions (optional)" placeholder="e.g. Meet at reception, call on arrival" {...register("instructions")} error={errors.instructions?.message} disabled={isSubmitting} />
               </div>
             </div>

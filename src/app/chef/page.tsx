@@ -35,8 +35,8 @@ export default async function ChefHomePage() {
         <MetricCard label="Completed" value={counts.completed} icon={CheckCircle2} tone="good" href="/chef/orders?tab=completed" />
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.6fr_1fr]">
-        <section className="space-y-4">
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <section className="min-w-0 space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-extrabold">New orders</h2>
             <Link href="/chef/orders" className="text-sm font-bold text-primary hover:underline">All orders</Link>

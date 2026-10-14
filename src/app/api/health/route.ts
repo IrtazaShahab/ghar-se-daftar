@@ -1,34 +1,35 @@
 import { NextResponse } from "next/server";
 import { describeDbError, prisma } from "@/lib/db/prisma";
-import { getSupabasePublicKey } from "@/lib/supabase/server";
+import { getDatabaseUrlWarnings, getMissingServerEnv } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
 
+const NO_STORE = { "Cache-Control": "no-store" };
+
+/**
+ * Public health check: { status: "ok" } or a generic 503. Details go to the
+ * server log only (variable names and Prisma error codes, never hosts or URLs).
+ */
 export async function GET() {
-  const checks = {
-    database: "unknown",
-    supabaseUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL),
-    supabaseKey: Boolean(getSupabasePublicKey())
-  };
+  let healthy = true;
+
+  const missing = getMissingServerEnv();
+  if (missing.length > 0) {
+    console.error(`Health: missing environment variables: ${missing.join(", ")}`);
+    healthy = false;
+  }
+  for (const warning of getDatabaseUrlWarnings()) console.warn(`Health: ${warning}`);
 
   try {
+    // A real round trip through the pooler, not just client construction.
     await prisma.$queryRaw`SELECT 1`;
-    checks.database = "ok";
   } catch (error) {
-    // Error code only: Prisma messages can include the database host.
-    console.error(`Health database check failed (${describeDbError(error)})`);
-    checks.database = "error";
+    console.error(`Health: database check failed (${describeDbError(error)})`);
+    healthy = false;
   }
 
-  const healthy = checks.database === "ok" && checks.supabaseUrl && checks.supabaseKey;
-
-  return NextResponse.json(
-    {
-      status: healthy ? "ok" : "error",
-      service: "ghar-se-daftar",
-      checks,
-      timestamp: new Date().toISOString()
-    },
-    { status: healthy ? 200 : 500 }
-  );
+  if (!healthy) {
+    return NextResponse.json({ status: "unavailable" }, { status: 503, headers: NO_STORE });
+  }
+  return NextResponse.json({ status: "ok" }, { headers: NO_STORE });
 }

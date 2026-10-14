@@ -21,6 +21,12 @@ const CHEF_TRANSITIONS: ReadonlyArray<[OrderStatus, OrderStatus]> = [
   ["PREPARING", "READY"]
 ];
 
+/** Transitions a rider may perform on deliveries assigned to (and accepted by) them. */
+const RIDER_TRANSITIONS: ReadonlyArray<[OrderStatus, OrderStatus]> = [
+  ["READY", "OUT_FOR_DELIVERY"],
+  ["OUT_FOR_DELIVERY", "DELIVERED"]
+];
+
 export function canTransition(from: OrderStatus, to: OrderStatus) {
   return ORDER_TRANSITIONS[from].includes(to);
 }
@@ -29,6 +35,7 @@ export function canRoleTransition(role: UserRole, from: OrderStatus, to: OrderSt
   if (!canTransition(from, to)) return false;
   if (role === "ADMIN") return true;
   if (role === "HOME_CHEF") return CHEF_TRANSITIONS.some(([f, t]) => f === from && t === to);
+  if (role === "RIDER") return RIDER_TRANSITIONS.some(([f, t]) => f === from && t === to);
   return false;
 }
 
@@ -51,7 +58,7 @@ export const ORDER_STATUS_DESCRIPTIONS: Record<OrderStatus, string> = {
   CONFIRMED: "Your order is confirmed and scheduled with a home kitchen.",
   PREPARING: "Your meal is being freshly prepared.",
   READY: "Your meal is packed and waiting for pickup.",
-  OUT_FOR_DELIVERY: "Your meal is on its way to your office.",
+  OUT_FOR_DELIVERY: "Your meal is on its way to you.",
   DELIVERED: "Your meal has been delivered. Enjoy!",
   CANCELLED: "This order was cancelled."
 };

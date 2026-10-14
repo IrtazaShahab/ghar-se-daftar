@@ -132,6 +132,9 @@ Back up the database first (Supabase → Database → Backups).
 
 1. `supabase/migrations/20260929120000_order_platform_schema.sql`
 2. `supabase/migrations/20260929120100_order_platform_security.sql`
+3. `supabase/migrations/20261006120000_delivery_riders_service_windows.sql`
+   (riders, live tracking, map pins, delivery windows; see
+   [DELIVERY_AND_RIDERS.md](DELIVERY_AND_RIDERS.md))
 
 **If the database has none of the app tables yet:** run `npx prisma db push`
 (with `DIRECT_URL` set), then run file 2 above.

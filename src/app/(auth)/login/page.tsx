@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema, type LoginInput } from "@/lib/validations/auth";
 import { login } from "@/app/actions/auth";
+import { clearNavUser } from "@/lib/auth/nav-session";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { LogoFull } from "@/components/brand/logo";
@@ -15,6 +16,7 @@ import { Mail, Lock, ChefHat, ShieldCheck, Clock3, CheckCircle2 } from "lucide-r
 const STAFF_HOME: Record<string, string> = {
   ADMIN: "/admin",
   HOME_CHEF: "/chef",
+  RIDER: "/rider",
   CORPORATE_ADMIN: "/dashboard/corporate"
 };
 
@@ -69,6 +71,7 @@ export default function LoginPage() {
       const result = await login(data);
 
       if (result.success) {
+        clearNavUser();
         router.replace(loginDestination(result.role, new URLSearchParams(window.location.search).get("next")));
         router.refresh();
       } else {

@@ -88,7 +88,7 @@ export default async function AdminOrdersPage({ searchParams }: { searchParams: 
         description={customerRecord ? `Orders placed by ${customerRecord.fullName}.` : `${total} order${total === 1 ? "" : "s"} match your filters.`}
       />
 
-      <form method="get" className="glass-card grid gap-4 rounded-[22px] p-5 sm:grid-cols-2 lg:grid-cols-6">
+      <form method="get" className="glass-card grid gap-4 rounded-[22px] p-5 sm:grid-cols-2 lg:grid-cols-6 [&>*]:min-w-0">
         <Field label="Search" className="sm:col-span-2">
           <input name="q" defaultValue={q} placeholder="Order #, name, email, phone, area" className={fieldClass} />
         </Field>

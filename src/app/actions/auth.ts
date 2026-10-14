@@ -1,6 +1,6 @@
 "use server";
 
-import { prisma } from "@/lib/db/prisma";
+import { describeDbError, prisma } from "@/lib/db/prisma";
 import { getCurrentUser as getAuthenticatedUser } from "@/lib/auth/get-user";
 import { createSupabaseServerClient, SupabaseConfigError } from "@/lib/supabase/server";
 import { AppUrlConfigError, getAuthCallbackUrl } from "@/lib/app-url";
@@ -48,6 +48,12 @@ const EMAIL_PATTERN = /[^\s"'<>@]+@[^\s"'<>@]+/g;
 function logAuthError(context: string, error: unknown) {
   if (!(error instanceof Error)) {
     console.error(`${context}: unknown error`);
+    return;
+  }
+
+  // Prisma messages can include the database host: log the error code only.
+  if (error.name.startsWith("PrismaClient")) {
+    console.error(`${context}: database error (${error.name} ${describeDbError(error)})`);
     return;
   }
 

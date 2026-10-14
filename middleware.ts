@@ -12,11 +12,13 @@ function setSecurityHeaders(response: NextResponse) {
     "Content-Security-Policy",
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' data: https:",
-      "font-src 'self' data:",
+      // Google Maps JS (checkout address picker, delivery tracking map) is loaded on demand.
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://maps.googleapis.com https://maps.gstatic.com",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data: https://fonts.gstatic.com",
       "connect-src 'self' https:",
+      "worker-src 'self' blob:",
       "frame-ancestors 'none'"
     ].join("; ")
   );
@@ -56,11 +58,15 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  await supabase.auth.getUser();
+  // Refreshes an expired session (writing the new cookies above) and verifies the
+  // JWT locally against the project's cached public keys; no Auth round trip on
+  // every request. Pages re-check the user themselves.
+  await supabase.auth.getClaims();
 
   return setSecurityHeaders(response);
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"]
+  // Static files and images never need a session refresh.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|favicon.svg|images/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico|woff2?)$).*)"]
 };

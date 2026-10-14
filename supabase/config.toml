@@ -1,40 +1,41 @@
-# Local Supabase CLI email configuration. Hosted projects must be configured in
-# Authentication > Email Templates and Authentication > URL Configuration.
+# Supabase CLI config (local stack and Supabase Branching/Preview). Paths below are
+# relative to this supabase/ directory. Hosted production auth settings are managed
+# in the dashboard: Authentication > Email Templates and URL Configuration.
 [auth]
 site_url = "http://localhost:3000"
 additional_redirect_urls = ["http://localhost:3000/auth/callback**", "http://localhost:3100/auth/callback**"]
 
 [auth.email.template.confirmation]
 subject = "Confirm your Ghar Se Daftar email"
-content_path = "./supabase/templates/confirmation.html"
+content_path = "./templates/confirmation.html"
 
 [auth.email.template.recovery]
 subject = "Reset your Ghar Se Daftar password"
-content_path = "./supabase/templates/recovery.html"
+content_path = "./templates/recovery.html"
 
 [auth.email.template.email_change]
 subject = "Confirm your new Ghar Se Daftar email address"
-content_path = "./supabase/templates/email-change.html"
+content_path = "./templates/email-change.html"
 
 [auth.email.template.invite]
 subject = "You've been invited to Ghar Se Daftar"
-content_path = "./supabase/templates/invite.html"
+content_path = "./templates/invite.html"
 
 [auth.email.template.magic_link]
 subject = "Your Ghar Se Daftar sign-in link"
-content_path = "./supabase/templates/magic-link.html"
+content_path = "./templates/magic-link.html"
 
 [auth.email.template.reauthentication]
 subject = "Your Ghar Se Daftar verification code"
-content_path = "./supabase/templates/reauthentication.html"
+content_path = "./templates/reauthentication.html"
 
 # Security notifications (sent after the change has happened).
 [auth.email.notification.password_changed]
 enabled = true
 subject = "Your Ghar Se Daftar password was changed"
-content_path = "./supabase/templates/password-changed.html"
+content_path = "./templates/password-changed.html"
 
 [auth.email.notification.email_changed]
 enabled = true
 subject = "Your Ghar Se Daftar email address was changed"
-content_path = "./supabase/templates/email-changed.html"
+content_path = "./templates/email-changed.html"
