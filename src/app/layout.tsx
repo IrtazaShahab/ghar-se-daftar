@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { RootProviders } from "@/components/providers/root-providers";
 import { getOrganizationSchema } from "@/lib/seo";
+import { inter } from "./fonts";
 
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -83,7 +84,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" data-scroll-behavior="smooth">
+    <html lang="en" className={inter.variable} data-scroll-behavior="smooth">
       <head>
         {/* JSON-LD Structured Data */}
         <script
